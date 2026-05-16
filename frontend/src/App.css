@@ -236,6 +236,9 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   justify-content: center;
 }
 .font-btn:hover { background: var(--bg-hover); color: var(--text-1); }
+
+.settings-btn {
+  padding: 10px 20px;
   border-radius: var(--r-sm);
   background: var(--bg);
   border: 1px solid var(--border);
