@@ -3,6 +3,7 @@ import "./App.css";
 import TouchKeyboard from "./Keyboard.jsx";
 import { useFeedback } from "./useFeedback.js";
 import { useDimmer } from "./useDimmer.js";
+import { useDebounce } from "./useDebounce.js";
 
 const API = "/api";
 
@@ -503,6 +504,12 @@ export default function App() {
   const { events,  reload: reloadEvents  } = useEvents(weekStart);
   const memberMap = Object.fromEntries(members.map(m => [m.id, m]));
 
+  const handlePrevWeek = useDebounce(useCallback(() => { tap(); setWeekStart(w => addDays(w, -7)); }, [tap]), 300);
+  const handleNextWeek = useDebounce(useCallback(() => { tap(); setWeekStart(w => addDays(w,  7)); }, [tap]), 300);
+  const handleToday    = useDebounce(useCallback(() => { tap(); setWeekStart(startOfWeek(today)); }, [tap, today]), 300);
+  const handleCellTap  = useDebounce(useCallback((member, day) => { tap(); setAddModal({ member, date: day }); }, [tap]), 300);
+  const handleEventTap = useDebounce(useCallback((ev, member) => { tap(); setEvModal({ event: ev, member }); }, [tap]), 300);
+
   // Hide loading screen once we have a response from the API
   useEffect(() => {
     if (members.length >= 0) {
@@ -548,11 +555,11 @@ export default function App() {
           </span>
         </div>
         <div className="topbar__nav">
-          <button className="nav-btn" onClick={() => { tap(); setWeekStart(w => addDays(w,-7)); }}>‹</button>
+          <button className="nav-btn" onClick={handlePrevWeek}>‹</button>
           <span className="week-label">{weekLabel}</span>
-          <button className="nav-btn" onClick={() => { tap(); setWeekStart(w => addDays(w, 7)); }}>›</button>
+          <button className="nav-btn" onClick={handleNextWeek}>›</button>
           {!isThisWeek && (
-            <button className="today-btn" onClick={() => { tap(); setWeekStart(startOfWeek(today)); }}>Today</button>
+            <button className="today-btn" onClick={handleToday}>Today</button>
           )}
         </div>
         <button className="settings-btn" onClick={() => setSettings(true)}>⚙ Settings</button>
@@ -596,14 +603,14 @@ export default function App() {
                     <div
                       key={di}
                       className={`cal__cell ${isToday ? "cal__cell--today" : ""}`}
-                      onClick={() => { tap(); setAddModal({ member: m, date: day }); }}
+                      onClick={() => handleCellTap(m, day)}
                     >
                       {dayEvs.map((ev, ei) => (
                         <div
                           key={ei}
                           className="ev"
                           style={{ "--mc": m.color }}
-                          onClick={e => { e.stopPropagation(); tap(); setEvModal({ event: ev, member: m }); }}
+                          onClick={e => { e.stopPropagation(); handleEventTap(ev, m); }}
                         >
                           <span className="ev__title">{ev.title}</span>
                           <div className="ev__meta">

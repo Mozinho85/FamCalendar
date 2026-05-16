@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import "./Keyboard.css";
 import { useFeedback } from "./useFeedback.js";
 
@@ -29,6 +29,7 @@ export default function TouchKeyboard({ targetRef, value, onChange, onDone, visi
   const [shift, setShift]       = useState(false);
   const [capsLock, setCapsLock] = useState(false);
   const { tap, back }           = useFeedback();
+  const lastPress               = useRef(0);
 
   // Reset state when keyboard opens
   useEffect(() => {
@@ -36,6 +37,9 @@ export default function TouchKeyboard({ targetRef, value, onChange, onDone, visi
   }, [visible]);
 
   const press = useCallback((key) => {
+    const now = Date.now();
+    if (now - lastPress.current < 80) return;
+    lastPress.current = now;
     if (key === "SHIFT") {
       tap();
       if (shift) {
