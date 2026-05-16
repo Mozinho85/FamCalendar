@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import "./App.css";
 import TouchKeyboard from "./Keyboard.jsx";
 import { useFeedback } from "./useFeedback.js";
+import { useDimmer } from "./useDimmer.js";
 
 const API = "/api";
 
@@ -496,6 +497,7 @@ export default function App() {
   function decreaseFontSize() { setFontSize(f => Math.max(f - 1, 12)); }
 
   const { tap, success, back } = useFeedback();
+  const dimmed = useDimmer();
 
   const { members, reload: reloadMembers } = useMembers();
   const { events,  reload: reloadEvents  } = useEvents(weekStart);
@@ -536,6 +538,7 @@ export default function App() {
   return (
     <div className="app">
       <LoadingScreen visible={loading} />
+      {dimmed && <div className="dim-overlay" />}
       <header className="topbar">
         <div className="topbar__clock">
           <span className="clock">{pad(now.getHours())}:{pad(now.getMinutes())}</span>
