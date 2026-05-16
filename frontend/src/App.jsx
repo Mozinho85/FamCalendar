@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import "./App.css";
 
-const API = "http://localhost:3001/api";
+const API = "/api";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -30,7 +30,7 @@ function eventOnDay(ev, day) {
 const MONTHS = ["January","February","March","April","May","June",
                 "July","August","September","October","November","December"];
 const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-const PALETTE = ["#e2719a","#4fc3a1","#f0a040","#5ab4e8","#a78bfa","#fb923c","#34d399","#f472b6"];
+const PALETTE = ["#e05a8a","#2db88a","#f09030","#3a9fe0","#8b6fde","#e06030","#10b981","#d946ef"];
 
 // ── Hooks ─────────────────────────────────────────────────────────────────────
 
@@ -53,7 +53,11 @@ function useEvents(weekStart) {
       setEvents(await r.json());
     } catch {}
   }, [weekStart]);
-  useEffect(() => { load(); const id = setInterval(load, 60000); return () => clearInterval(id); }, [load]);
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 60000);
+    return () => clearInterval(id);
+  }, [load]);
   return { events, reload: load };
 }
 
@@ -66,10 +70,10 @@ function useClock() {
 // ── Add Event Modal ───────────────────────────────────────────────────────────
 
 function AddEventModal({ date, member, members, onClose, onSave }) {
-  const [title, setTitle]     = useState("");
-  const [memberId, setMemberId] = useState(member?.id || members[0]?.id || "");
-  const [allDay, setAllDay]   = useState(true);
-  const [dateStr, setDateStr] = useState(
+  const [title, setTitle]         = useState("");
+  const [memberId, setMemberId]   = useState(member?.id || members[0]?.id || "");
+  const [allDay, setAllDay]       = useState(true);
+  const [dateStr, setDateStr]     = useState(
     date ? `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}` : ""
   );
   const [startTime, setStartTime] = useState("09:00");
@@ -91,7 +95,8 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
-        <div className="modal__head"><h2>Add event</h2>
+        <div className="modal__head">
+          <h2>Add event</h2>
           <button className="modal__close" onClick={onClose}>✕</button>
         </div>
         <div className="modal__body">
@@ -152,7 +157,7 @@ function EventModal({ event, member, onClose, onDelete }) {
             ["Date",     `${start.getDate()} ${MONTHS[start.getMonth()]} ${start.getFullYear()}`],
             !event.all_day && ["Time", `${formatTime(event.start_datetime)} – ${formatTime(event.end_datetime)}`],
             event.location && ["Location", event.location],
-            event.notes   && ["Notes",    event.notes],
+            event.notes    && ["Notes",    event.notes],
           ].filter(Boolean).map(([label, val]) => (
             <div key={label} className="ev-detail">
               <span className="ev-detail__label">{label}</span>
@@ -177,13 +182,13 @@ function EventModal({ event, member, onClose, onDelete }) {
 // ── Settings Modal ────────────────────────────────────────────────────────────
 
 function SettingsModal({ members, onClose, onReload }) {
-  const [editing, setEditing]   = useState(null);
-  const [editName, setEditName] = useState("");
+  const [editing, setEditing]     = useState(null);
+  const [editName, setEditName]   = useState("");
   const [editColor, setEditColor] = useState(PALETTE[0]);
   const [addingNew, setAddingNew] = useState(false);
-  const [newName, setNewName]   = useState("");
-  const [newColor, setNewColor] = useState(PALETTE[0]);
-  const [busy, setBusy]         = useState(false);
+  const [newName, setNewName]     = useState("");
+  const [newColor, setNewColor]   = useState(PALETTE[0]);
+  const [busy, setBusy]           = useState(false);
 
   function startEdit(m) { setEditing(m.id); setEditName(m.name); setEditColor(m.color); }
 
@@ -216,7 +221,7 @@ function SettingsModal({ members, onClose, onReload }) {
     <div className="overlay" onClick={onClose}>
       <div className="modal modal--settings" onClick={e => e.stopPropagation()}>
         <div className="modal__head">
-          <h2>Settings — family members</h2>
+          <h2>Family members</h2>
           <button className="modal__close" onClick={onClose}>✕</button>
         </div>
         <div className="modal__body">
@@ -224,7 +229,8 @@ function SettingsModal({ members, onClose, onReload }) {
             <div key={m.id} className="s-member">
               {editing === m.id ? (
                 <>
-                  <input className="s-input" value={editName} onChange={e => setEditName(e.target.value)} autoFocus />
+                  <input className="s-input" value={editName}
+                    onChange={e => setEditName(e.target.value)} autoFocus />
                   <div className="s-palette">
                     {PALETTE.map(c => (
                       <button key={c} className={`s-swatch ${editColor===c?"s-swatch--on":""}`}
@@ -254,8 +260,8 @@ function SettingsModal({ members, onClose, onReload }) {
 
           {addingNew ? (
             <div className="s-member s-member--new">
-              <input className="s-input" value={newName} onChange={e => setNewName(e.target.value)}
-                placeholder="Name" autoFocus />
+              <input className="s-input" value={newName}
+                onChange={e => setNewName(e.target.value)} placeholder="Name" autoFocus />
               <div className="s-palette">
                 {PALETTE.map(c => (
                   <button key={c} className={`s-swatch ${newColor===c?"s-swatch--on":""}`}
@@ -274,8 +280,9 @@ function SettingsModal({ members, onClose, onReload }) {
           )}
 
           <div className="s-divider" />
-          <p className="s-note">To connect Google Calendar for a person, open this URL on their phone while on home WiFi, replacing the ID with theirs from /api/members:</p>
+          <p className="s-note">To connect Google Calendar, open this on the person's phone while on home WiFi:</p>
           <code className="s-url">http://pi.local:3001/auth/google/start?member_id=member-1</code>
+          <p className="s-note">Replace member-1 with the correct ID from /api/members</p>
         </div>
         <div className="modal__foot">
           <button className="btn-primary" onClick={onClose}>Done</button>
@@ -285,11 +292,11 @@ function SettingsModal({ members, onClose, onReload }) {
   );
 }
 
-// ── App ───────────────────────────────────────────────────────────────────────
+// ── Main App ──────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const now    = useClock();
-  const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const now   = useClock();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const [weekStart, setWeekStart] = useState(() => startOfWeek(today));
   const [addModal, setAddModal]   = useState(null);
   const [evModal, setEvModal]     = useState(null);
@@ -325,27 +332,26 @@ export default function App() {
 
   return (
     <div className="app">
-      {/* ── Top bar ── */}
       <header className="topbar">
         <div className="topbar__clock">
           <span className="clock">{pad(now.getHours())}:{pad(now.getMinutes())}</span>
           <span className="topbar__date">
-            {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][now.getDay()]}&nbsp;
-            {now.getDate()} {MONTHS[now.getMonth()].slice(0,3)}
+            {["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][now.getDay()]},&nbsp;
+            {now.getDate()} {MONTHS[now.getMonth()]}
           </span>
         </div>
         <div className="topbar__nav">
           <button className="nav-btn" onClick={() => setWeekStart(w => addDays(w,-7))}>‹</button>
           <span className="week-label">{weekLabel}</span>
           <button className="nav-btn" onClick={() => setWeekStart(w => addDays(w, 7))}>›</button>
-          {!isThisWeek && <button className="today-btn" onClick={() => setWeekStart(startOfWeek(today))}>Today</button>}
+          {!isThisWeek && (
+            <button className="today-btn" onClick={() => setWeekStart(startOfWeek(today))}>Today</button>
+          )}
         </div>
         <button className="settings-btn" onClick={() => setSettings(true)}>⚙ Settings</button>
       </header>
 
-      {/* ── Calendar ── */}
       <div className="cal">
-        {/* Day headers */}
         <div className="cal__head">
           <div className="cal__corner" />
           {days.map((day, i) => (
@@ -356,7 +362,6 @@ export default function App() {
           ))}
         </div>
 
-        {/* Member rows */}
         <div className="cal__body">
           {members.length === 0 && (
             <div className="cal__empty">
@@ -403,7 +408,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Modals ── */}
       {addModal && (
         <AddEventModal date={addModal.date} member={addModal.member} members={members}
           onClose={() => setAddModal(null)} onSave={saveEvent} />
