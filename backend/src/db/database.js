@@ -28,6 +28,7 @@ function migrate() {
       color       TEXT NOT NULL DEFAULT '#8b6fde',
       google_refresh_token TEXT,
       google_calendar_ids  TEXT DEFAULT '[]',
+      ical_urls            TEXT DEFAULT '[]',
       created_at  TEXT DEFAULT (datetime('now')),
       updated_at  TEXT DEFAULT (datetime('now'))
     );
@@ -60,11 +61,23 @@ function migrate() {
       FOREIGN KEY (member_id) REFERENCES family_members(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS ical_sync_state (
+      member_id  TEXT NOT NULL,
+      url        TEXT NOT NULL,
+      last_sync  TEXT,
+      last_etag  TEXT,
+      PRIMARY KEY (member_id, url),
+      FOREIGN KEY (member_id) REFERENCES family_members(id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_events_start    ON events(start_datetime);
     CREATE INDEX IF NOT EXISTS idx_events_member   ON events(member_id);
     CREATE INDEX IF NOT EXISTS idx_events_source   ON events(source);
     CREATE INDEX IF NOT EXISTS idx_events_google   ON events(google_event_id);
   `);
+
+  // Migrate existing installs — add columns if they don't exist yet
+  try { db.exec("ALTER TABLE family_members ADD COLUMN ical_urls TEXT DEFAULT '[]'"); } catch {}
 
   // Seed default family members if table is empty
   const count = db.prepare('SELECT COUNT(*) as c FROM family_members').get();

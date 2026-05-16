@@ -327,6 +327,16 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   flex-shrink: 0;
 }
 
+.ev__ical {
+  font-size: 9px;
+  font-weight: 600;
+  color: white;
+  background: #0ea5e9;
+  padding: 1px 4px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
 /* ── Modals ────────────────────────────────────────────────────────── */
 .overlay {
   position: fixed; inset: 0;
@@ -560,6 +570,54 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   background: #4285f4; color: white;
   font-size: 11px; font-weight: 600;
   flex-shrink: 0;
+}
+
+.badge-ical {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0 6px; height: 20px; border-radius: 4px;
+  background: #0ea5e9; color: white;
+  font-size: 11px; font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* iCal manager */
+.ical-manager { display: flex; flex-direction: column; gap: 8px; }
+
+.ical-empty { font-size: 13px; color: var(--text-3); }
+
+.ical-url-row {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 8px 10px;
+}
+
+.ical-badge {
+  font-size: 10px; font-weight: 600; color: white;
+  background: #0ea5e9; padding: 2px 6px; border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.ical-url-text {
+  font-size: 12px; color: var(--text-2); font-family: var(--mono);
+  flex: 1; min-width: 0; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+
+.ical-add-row { display: flex; gap: 8px; }
+.ical-add-row .s-input { flex: 1; }
+.ical-add-row .btn-primary { flex-shrink: 0; padding: 9px 16px; }
+
+.ical-error { font-size: 12px; color: #dc2626; }
+
+.s-expanded {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.s-section-label {
+  font-size: 11px; font-weight: 500; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.5px;
 }
 
 /* ── Scrollbar ─────────────────────────────────────────────────────── */

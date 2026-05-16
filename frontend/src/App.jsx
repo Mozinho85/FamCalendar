@@ -181,10 +181,75 @@ function EventModal({ event, member, onClose, onDelete }) {
 
 // ── Settings Modal ────────────────────────────────────────────────────────────
 
+function IcalManager({ member, onReload }) {
+  const [urls, setUrls]     = useState(member.ical_urls || []);
+  const [newUrl, setNewUrl] = useState("");
+  const [busy, setBusy]     = useState(false);
+  const [error, setError]   = useState("");
+
+  async function save(updatedUrls) {
+    setBusy(true);
+    await fetch(`${API}/members/${member.id}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ical_urls: updatedUrls }),
+    });
+    // Trigger an immediate sync
+    fetch(`${API}/sync/now`, { method: "POST" }).catch(() => {});
+    setBusy(false);
+    onReload();
+  }
+
+  async function addUrl() {
+    const trimmed = newUrl.trim();
+    if (!trimmed) return;
+    if (!trimmed.startsWith("http")) { setError("URL must start with http:// or https://"); return; }
+    setError("");
+    const updated = [...urls, trimmed];
+    setUrls(updated);
+    setNewUrl("");
+    await save(updated);
+  }
+
+  async function removeUrl(url) {
+    const updated = urls.filter(u => u !== url);
+    setUrls(updated);
+    await save(updated);
+  }
+
+  return (
+    <div className="ical-manager">
+      {urls.length === 0 && (
+        <p className="ical-empty">No iCal feeds connected</p>
+      )}
+      {urls.map((url, i) => (
+        <div key={i} className="ical-url-row">
+          <span className="ical-badge">iCal</span>
+          <span className="ical-url-text">{url}</span>
+          <button className="btn-icon btn-icon--danger" onClick={() => removeUrl(url)}>✕</button>
+        </div>
+      ))}
+      <div className="ical-add-row">
+        <input
+          className="s-input"
+          value={newUrl}
+          onChange={e => { setNewUrl(e.target.value); setError(""); }}
+          placeholder="https://example.com/calendar.ics"
+          onKeyDown={e => e.key === "Enter" && addUrl()}
+        />
+        <button className="btn-primary" onClick={addUrl} disabled={busy || !newUrl.trim()}>
+          {busy ? "…" : "Add"}
+        </button>
+      </div>
+      {error && <p className="ical-error">{error}</p>}
+    </div>
+  );
+}
+
 function SettingsModal({ members, onClose, onReload }) {
   const [editing, setEditing]     = useState(null);
   const [editName, setEditName]   = useState("");
   const [editColor, setEditColor] = useState(PALETTE[0]);
+  const [expanded, setExpanded]   = useState(null);
   const [addingNew, setAddingNew] = useState(false);
   const [newName, setNewName]     = useState("");
   const [newColor, setNewColor]   = useState(PALETTE[0]);
@@ -245,15 +310,43 @@ function SettingsModal({ members, onClose, onReload }) {
                   </div>
                 </>
               ) : (
-                <div className="s-member__row">
-                  <div className="s-avatar" style={{ background: m.color }}>{m.name[0]}</div>
-                  <span className="s-member__name">{m.name}</span>
-                  {m.google_connected && <span className="badge-g" title="Google Calendar connected">G</span>}
-                  <div className="s-member__btns">
-                    <button className="btn-icon" onClick={() => startEdit(m)}>✎ Edit</button>
-                    <button className="btn-icon btn-icon--danger" onClick={() => remove(m.id)}>✕ Remove</button>
+                <>
+                  <div className="s-member__row">
+                    <div className="s-avatar" style={{ background: m.color }}>{m.name[0]}</div>
+                    <span className="s-member__name">{m.name}</span>
+                    {m.google_connected && <span className="badge-g" title="Google Calendar connected">G</span>}
+                    {(m.ical_urls?.length > 0) && (
+                      <span className="badge-ical" title={`${m.ical_urls.length} iCal feed(s)`}>
+                        iCal {m.ical_urls.length}
+                      </span>
+                    )}
+                    <div className="s-member__btns">
+                      <button className="btn-icon"
+                        onClick={() => setExpanded(expanded === m.id ? null : m.id)}>
+                        {expanded === m.id ? "▲ Feeds" : "▼ Feeds"}
+                      </button>
+                      <button className="btn-icon" onClick={() => startEdit(m)}>✎ Edit</button>
+                      <button className="btn-icon btn-icon--danger" onClick={() => remove(m.id)}>✕</button>
+                    </div>
                   </div>
-                </div>
+                  {expanded === m.id && (
+                    <div className="s-expanded">
+                      <p className="s-section-label">iCal feeds</p>
+                      <IcalManager member={m} onReload={onReload} />
+                      {m.google_connected ? (
+                        <p className="s-note" style={{ marginTop: 8 }}>✓ Google Calendar connected</p>
+                      ) : (
+                        <>
+                          <p className="s-section-label" style={{ marginTop: 12 }}>Google Calendar</p>
+                          <code className="s-url">
+                            http://pi.local:3001/auth/google/start?member_id={m.id}
+                          </code>
+                          <p className="s-note">Open on their phone while on home WiFi</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           ))}
@@ -278,11 +371,6 @@ function SettingsModal({ members, onClose, onReload }) {
           ) : (
             <button className="s-add-btn" onClick={() => setAddingNew(true)}>+ Add person</button>
           )}
-
-          <div className="s-divider" />
-          <p className="s-note">To connect Google Calendar, open this on the person's phone while on home WiFi:</p>
-          <code className="s-url">http://pi.local:3001/auth/google/start?member_id=member-1</code>
-          <p className="s-note">Replace member-1 with the correct ID from /api/members</p>
         </div>
         <div className="modal__foot">
           <button className="btn-primary" onClick={onClose}>Done</button>
@@ -397,6 +485,7 @@ export default function App() {
                           <span className="ev__title">{ev.title}</span>
                           {!ev.all_day && <span className="ev__time">{formatTime(ev.start_datetime)}</span>}
                           {ev.source === "google" && <span className="ev__g">G</span>}
+                          {ev.source === "ical"   && <span className="ev__ical">iCal</span>}
                         </div>
                       ))}
                     </div>

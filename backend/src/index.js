@@ -8,6 +8,7 @@ const eventsRouter  = require('./routes/events');
 const membersRouter = require('./routes/members');
 const authRouter    = require('./routes/auth');
 const { syncAllMembers } = require('./services/googleSync');
+const { syncAllIcal }   = require('./services/icalSync');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -52,8 +53,8 @@ app.get('/api/sync/status', (req, res) => {
 // Manual sync trigger (useful from phone UI)
 app.post('/api/sync/now', async (req, res) => {
   try {
-    const results = await syncAllMembers();
-    res.json({ success: true, results });
+    const [gResults, iResults] = await Promise.all([syncAllMembers(), syncAllIcal()]);
+    res.json({ success: true, google: gResults, ical: iResults });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -81,10 +82,10 @@ app.get('*', (req, res) => {
 // Schedule Google Calendar sync
 const cronExpression = `*/${SYNC_INTERVAL} * * * *`;
 cron.schedule(cronExpression, async () => {
-  console.log(`[${new Date().toISOString()}] Running scheduled Google Calendar sync...`);
+  console.log(`[${new Date().toISOString()}] Running scheduled sync...`);
   try {
-    const results = await syncAllMembers();
-    const total = results.reduce((s, r) => s + (r.added || 0) + (r.updated || 0), 0);
+    const [gResults, iResults] = await Promise.all([syncAllMembers(), syncAllIcal()]);
+    const total = [...gResults, ...iResults].reduce((s, r) => s + (r.added || 0) + (r.updated || 0), 0);
     if (total > 0) console.log(`Sync complete: ${total} changes`);
   } catch (err) {
     console.error('Scheduled sync failed:', err.message);
@@ -93,8 +94,8 @@ cron.schedule(cronExpression, async () => {
 
 // Also run a sync on startup after a short delay
 setTimeout(() => {
-  syncAllMembers()
-    .then(r => r.length && console.log('Initial sync complete'))
+  Promise.all([syncAllMembers(), syncAllIcal()])
+    .then(([g, i]) => (g.length || i.length) && console.log('Initial sync complete'))
     .catch(err => console.error('Initial sync failed:', err.message));
 }, 5000);
 

@@ -13,11 +13,11 @@ function validate(req, res, next) {
 
 // GET /api/members
 router.get('/', (req, res) => {
-  const members = db.prepare('SELECT id, name, color, google_calendar_ids FROM family_members ORDER BY rowid').all();
-  // Parse stored JSON, hide tokens
+  const members = db.prepare('SELECT id, name, color, google_calendar_ids, ical_urls FROM family_members ORDER BY rowid').all();
   res.json(members.map(m => ({
     ...m,
     google_calendar_ids: JSON.parse(m.google_calendar_ids || '[]'),
+    ical_urls: JSON.parse(m.ical_urls || '[]'),
     google_connected: Boolean(
       db.prepare('SELECT google_refresh_token FROM family_members WHERE id = ?').get(m.id)?.google_refresh_token
     ),
@@ -55,6 +55,10 @@ router.put('/:id',
     if (req.body.google_calendar_ids) {
       updates.push('google_calendar_ids = ?');
       values.push(JSON.stringify(req.body.google_calendar_ids));
+    }
+    if (req.body.ical_urls !== undefined) {
+      updates.push('ical_urls = ?');
+      values.push(JSON.stringify(req.body.ical_urls));
     }
 
     if (updates.length) {
