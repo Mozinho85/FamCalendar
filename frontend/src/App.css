@@ -33,6 +33,14 @@ html, body, #root {
   font-family: var(--font);
   color: var(--text-1);
   -webkit-font-smoothing: antialiased;
+  cursor: none;
+  touch-action: manipulation;
+}
+
+* {
+  cursor: none !important;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 button { font-family: var(--font); cursor: pointer; border: none; background: none; color: inherit; }
@@ -197,7 +205,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   color: var(--text-2);
   font-size: 1.375rem;
   display: flex; align-items: center; justify-content: center;
-  transition: all 0.12s;
+  /* transition removed for Pi performance */
 }
 .nav-btn:hover { background: var(--bg-hover); border-color: var(--border-md); color: var(--text-1); }
 
@@ -209,7 +217,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   color: var(--accent);
   font-size: 0.9375rem;
   font-weight: 500;
-  transition: all 0.12s;
+  /* transition removed for Pi performance */
 }
 .today-btn:hover { background: #e0e5fd; }
 
@@ -228,7 +236,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   font-size: 0.8125rem;
   font-weight: 600;
   font-family: var(--font);
-  transition: all 0.12s;
+  /* transition removed for Pi performance */
   min-width: 44px;
   height: 44px;
   display: flex;
@@ -246,7 +254,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   font-size: 0.9375rem;
   font-weight: 500;
   flex-shrink: 0;
-  transition: all 0.12s;
+  /* transition removed for Pi performance */
 }
 .settings-btn:hover { background: var(--bg-hover); color: var(--text-1); }
 
@@ -279,7 +287,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   padding: 12px 6px;
   border-right: 1px solid var(--border);
   gap: 4px;
-  transition: background 0.1s;
+  /* transition removed for Pi performance */
 }
 .cal__day-hdr:last-child { border-right: none; }
 
@@ -386,7 +394,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   display: flex;
   flex-direction: column;
   gap: 5px;
-  transition: background 0.1s;
+  /* transition removed for Pi performance */
   min-height: 0;
   overflow: hidden;
 }
@@ -407,7 +415,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   border-left: 3px solid var(--mc);
   cursor: pointer;
   overflow: hidden;
-  transition: all 0.1s;
+  /* transition removed for Pi performance */
   flex-shrink: 0;
 }
 .ev:hover {
@@ -464,8 +472,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 /* ── Modals ────────────────────────────────────────────────────────── */
 .overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.3);
-  backdrop-filter: blur(4px);
+  background: rgba(0,0,0,0.4);
   display: flex; align-items: center; justify-content: center;
   z-index: 50; padding: 24px;
 }
@@ -474,7 +481,6 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  box-shadow: var(--shadow-md);
   width: 460px; max-width: 100%; max-height: 85vh;
   display: flex; flex-direction: column; overflow: hidden;
 }
@@ -497,7 +503,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   color: var(--text-3);
   font-size: 1.0rem;
   display: flex; align-items: center; justify-content: center;
-  transition: all 0.12s;
+  /* transition removed for Pi performance */
 }
 .modal__close:hover { background: var(--bg-hover); color: var(--text-1); }
 
@@ -569,7 +575,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   border: none;
   color: white;
   font-size: 1.0rem; font-weight: 500;
-  transition: all 0.12s;
+  /* transition removed for Pi performance */
   box-shadow: 0 1px 3px rgba(79,110,247,0.3);
 }
 .btn-primary:hover { background: #3d5ce0; }
@@ -582,7 +588,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   border: 1px solid var(--border-md);
   color: var(--text-2);
   font-size: 1.0rem;
-  transition: all 0.12s;
+  /* transition removed for Pi performance */
 }
 .btn-cancel:hover { background: var(--bg-hover); color: var(--text-1); }
 
@@ -594,7 +600,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   color: #dc2626;
   font-size: 1.0rem;
   margin-right: auto;
-  transition: all 0.12s;
+  /* transition removed for Pi performance */
 }
 .btn-danger:hover { background: #fee2e2; }
 
@@ -629,7 +635,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   border: 1px solid var(--border);
   color: var(--text-2);
   font-size: 0.8125rem;
-  transition: all 0.12s;
+  /* transition removed for Pi performance */
 }
 .btn-icon:hover { background: var(--bg-hover); color: var(--text-1); }
 .btn-icon--danger { color: #dc2626; }
@@ -668,7 +674,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   color: var(--text-3);
   font-size: 0.875rem; font-weight: 500;
   text-align: center; width: 100%;
-  transition: all 0.12s;
+  /* transition removed for Pi performance */
 }
 .s-add-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 

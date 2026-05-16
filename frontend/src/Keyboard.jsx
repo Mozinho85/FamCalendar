@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import "./Keyboard.css";
+import { useFeedback } from "./useFeedback.js";
 
 // ── Key layout ────────────────────────────────────────────────────────────────
 
@@ -24,9 +25,10 @@ const ROWS_NUM = [
 // ── Keyboard component ────────────────────────────────────────────────────────
 
 export default function TouchKeyboard({ targetRef, value, onChange, onDone, visible }) {
-  const [mode, setMode]       = useState("alpha"); // alpha | num
-  const [shift, setShift]     = useState(false);
+  const [mode, setMode]         = useState("alpha");
+  const [shift, setShift]       = useState(false);
   const [capsLock, setCapsLock] = useState(false);
+  const { tap, back }           = useFeedback();
 
   // Reset state when keyboard opens
   useEffect(() => {
@@ -35,8 +37,8 @@ export default function TouchKeyboard({ targetRef, value, onChange, onDone, visi
 
   const press = useCallback((key) => {
     if (key === "SHIFT") {
+      tap();
       if (shift) {
-        // Double tap = caps lock
         if (capsLock) { setCapsLock(false); setShift(false); }
         else { setCapsLock(true); }
       } else {
@@ -44,20 +46,20 @@ export default function TouchKeyboard({ targetRef, value, onChange, onDone, visi
       }
       return;
     }
-    if (key === "ABC") { setMode("alpha"); return; }
-    if (key === "123") { setMode("num");   return; }
+    if (key === "ABC") { tap(); setMode("alpha"); return; }
+    if (key === "123") { tap(); setMode("num");   return; }
     if (key === "⌫") {
+      back();
       onChange(value.slice(0, -1));
       return;
     }
-    if (key === "DONE") { onDone(); return; }
+    if (key === "DONE") { tap(); onDone(); return; }
 
+    tap();
     const char = (mode === "alpha" && (shift || capsLock)) ? key.toUpperCase() : key;
     onChange(value + char);
-
-    // Auto-unshift after one character (unless caps lock)
     if (shift && !capsLock) setShift(false);
-  }, [value, onChange, onDone, mode, shift, capsLock]);
+  }, [value, onChange, onDone, mode, shift, capsLock, tap, back]);
 
   if (!visible) return null;
 
@@ -87,7 +89,8 @@ export default function TouchKeyboard({ targetRef, value, onChange, onDone, visi
                     isActive ? "kb__key--active" : "",
                     isCaps   ? "kb__key--caps"   : "",
                   ].filter(Boolean).join(" ")}
-                  onPointerDown={(e) => { e.preventDefault(); press(key); }}
+                  onTouchStart={(e) => { e.preventDefault(); press(key); }}
+                  onPointerDown={(e) => { e.preventDefault(); }}
                 >
                   {isShift ? (capsLock ? "⇪" : "⇧") : key === " " ? "" : key}
                 </button>
@@ -99,15 +102,18 @@ export default function TouchKeyboard({ targetRef, value, onChange, onDone, visi
         {/* Bottom row: mode toggle, space, done */}
         <div className="kb__row kb__row--bottom">
           <button className="kb__key kb__key--mode"
-            onPointerDown={e => { e.preventDefault(); setMode(m => m === "alpha" ? "num" : "alpha"); }}>
+            onTouchStart={e => { e.preventDefault(); setMode(m => m === "alpha" ? "num" : "alpha"); tap(); }}
+            onPointerDown={e => e.preventDefault()}>
             {mode === "alpha" ? "123" : "ABC"}
           </button>
           <button className="kb__key kb__key--space"
-            onPointerDown={e => { e.preventDefault(); press(" "); }}>
+            onTouchStart={e => { e.preventDefault(); press(" "); }}
+            onPointerDown={e => e.preventDefault()}>
             space
           </button>
           <button className="kb__key kb__key--done"
-            onPointerDown={e => { e.preventDefault(); onDone(); }}>
+            onTouchStart={e => { e.preventDefault(); onDone(); tap(); }}
+            onPointerDown={e => e.preventDefault()}>
             Done
           </button>
         </div>

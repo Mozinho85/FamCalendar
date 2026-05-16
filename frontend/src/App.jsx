@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import "./App.css";
 import TouchKeyboard from "./Keyboard.jsx";
+import { useFeedback } from "./useFeedback.js";
 
 const API = "/api";
 
@@ -93,6 +94,7 @@ function useClock() {
 // ── Add Event Modal ───────────────────────────────────────────────────────────
 
 function AddEventModal({ date, member, members, onClose, onSave }) {
+  const { tap, success, back } = useFeedback();
   const [title, setTitle]         = useState("");
   const [memberId, setMemberId]   = useState(member?.id || members[0]?.id || "");
   const [allDay, setAllDay]       = useState(true);
@@ -109,6 +111,7 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
   const [kbVisible, setKbVisible] = useState(false);
 
   function focusField(field) {
+    tap();
     setKbTarget(field);
     setKbVisible(true);
   }
@@ -131,6 +134,7 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
     const end   = allDay ? `${dateStr}T23:59:59` : `${dateStr}T${endTime}:00`;
     await onSave({ title: title.trim(), start_datetime: start, end_datetime: end,
                    all_day: allDay, member_id: memberId, location });
+    success();
     setSaving(false);
     onClose();
   }
@@ -491,6 +495,8 @@ export default function App() {
   function increaseFontSize() { setFontSize(f => Math.min(f + 1, 24)); }
   function decreaseFontSize() { setFontSize(f => Math.max(f - 1, 12)); }
 
+  const { tap, success, back } = useFeedback();
+
   const { members, reload: reloadMembers } = useMembers();
   const { events,  reload: reloadEvents  } = useEvents(weekStart);
   const memberMap = Object.fromEntries(members.map(m => [m.id, m]));
@@ -539,11 +545,11 @@ export default function App() {
           </span>
         </div>
         <div className="topbar__nav">
-          <button className="nav-btn" onClick={() => setWeekStart(w => addDays(w,-7))}>‹</button>
+          <button className="nav-btn" onClick={() => { tap(); setWeekStart(w => addDays(w,-7)); }}>‹</button>
           <span className="week-label">{weekLabel}</span>
-          <button className="nav-btn" onClick={() => setWeekStart(w => addDays(w, 7))}>›</button>
+          <button className="nav-btn" onClick={() => { tap(); setWeekStart(w => addDays(w, 7)); }}>›</button>
           {!isThisWeek && (
-            <button className="today-btn" onClick={() => setWeekStart(startOfWeek(today))}>Today</button>
+            <button className="today-btn" onClick={() => { tap(); setWeekStart(startOfWeek(today)); }}>Today</button>
           )}
         </div>
         <button className="settings-btn" onClick={() => setSettings(true)}>⚙ Settings</button>
@@ -587,14 +593,14 @@ export default function App() {
                     <div
                       key={di}
                       className={`cal__cell ${isToday ? "cal__cell--today" : ""}`}
-                      onClick={() => setAddModal({ member: m, date: day })}
+                      onClick={() => { tap(); setAddModal({ member: m, date: day }); }}
                     >
                       {dayEvs.map((ev, ei) => (
                         <div
                           key={ei}
                           className="ev"
                           style={{ "--mc": m.color }}
-                          onClick={e => { e.stopPropagation(); setEvModal({ event: ev, member: m }); }}
+                          onClick={e => { e.stopPropagation(); tap(); setEvModal({ event: ev, member: m }); }}
                         >
                           <span className="ev__title">{ev.title}</span>
                           <div className="ev__meta">
