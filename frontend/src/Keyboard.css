@@ -1,0 +1,101 @@
+/* ── Touch Keyboard ────────────────────────────────────────────────── */
+
+.kb {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #d1d5db;
+  border-top: 1px solid #b0b7c3;
+  padding: 10px 6px 16px;
+  z-index: 300;
+  user-select: none;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+}
+
+.kb__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.kb__row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.kb__row--bottom {
+  gap: 8px;
+}
+
+.kb__key {
+  height: 52px;
+  min-width: 52px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: none;
+  background: #ffffff;
+  color: #111318;
+  font-size: 1.125rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #9ca3af;
+  transition: background 0.08s, transform 0.08s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  max-width: 72px;
+}
+
+.kb__key:active {
+  background: #e5e7eb;
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 #9ca3af;
+}
+
+/* Special key styles */
+.kb__key--shift,
+.kb__key--back,
+.kb__key--mode {
+  background: #9ca3af;
+  color: #111318;
+  font-size: 1.0rem;
+  max-width: 80px;
+  flex: 1.4;
+}
+
+.kb__key--active {
+  background: #4f6ef7;
+  color: white;
+  box-shadow: 0 2px 0 #3451c7;
+}
+
+.kb__key--caps {
+  background: #4f6ef7;
+  color: white;
+  box-shadow: 0 2px 0 #3451c7;
+}
+
+.kb__key--space {
+  flex: 5;
+  max-width: 400px;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.kb__key--done {
+  background: #4f6ef7;
+  color: white;
+  font-size: 1.0rem;
+  font-weight: 600;
+  flex: 2;
+  max-width: 140px;
+  box-shadow: 0 2px 0 #3451c7;
+}
+
+.kb__key--done:active {
+  background: #3d5ce0;
+}

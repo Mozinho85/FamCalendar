@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import "./App.css";
+import TouchKeyboard from "./Keyboard.jsx";
 
 const API = "/api";
 
@@ -51,7 +52,7 @@ function eventOnDay(ev, day) {
 
 const MONTHS = ["January","February","March","April","May","June",
                 "July","August","September","October","November","December"];
-const DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const PALETTE = ["#e05a8a","#2db88a","#f09030","#3a9fe0","#8b6fde","#e06030","#10b981","#d946ef"];
 
 // ── Hooks ─────────────────────────────────────────────────────────────────────
@@ -103,6 +104,26 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
   const [location, setLocation]   = useState("");
   const [saving, setSaving]       = useState(false);
 
+  // Keyboard state
+  const [kbTarget, setKbTarget]   = useState(null); // "title" | "location" | null
+  const [kbVisible, setKbVisible] = useState(false);
+
+  function focusField(field) {
+    setKbTarget(field);
+    setKbVisible(true);
+  }
+
+  function kbChange(val) {
+    if (kbTarget === "title")    setTitle(val);
+    if (kbTarget === "location") setLocation(val);
+  }
+
+  function kbValue() {
+    if (kbTarget === "title")    return title;
+    if (kbTarget === "location") return location;
+    return "";
+  }
+
   async function save() {
     if (!title.trim()) return;
     setSaving(true);
@@ -115,50 +136,95 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
   }
 
   return (
-    <div className="overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <div className="modal__head">
-          <h2>Add event</h2>
-          <button className="modal__close" onClick={onClose}>✕</button>
-        </div>
-        <div className="modal__body">
-          <label className="field"><span>Title</span>
-            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="What's happening?" autoFocus />
-          </label>
-          <label className="field"><span>Who</span>
-            <select value={memberId} onChange={e => setMemberId(e.target.value)}>
-              {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
-          </label>
-          <label className="field"><span>Date</span>
-            <input type="date" value={dateStr} onChange={e => setDateStr(e.target.value)} />
-          </label>
-          <label className="field field--inline">
-            <input type="checkbox" checked={allDay} onChange={e => setAllDay(e.target.checked)} />
-            <span>All day</span>
-          </label>
-          {!allDay && (
-            <div className="field-row">
-              <label className="field"><span>Start</span>
-                <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
-              </label>
-              <label className="field"><span>End</span>
-                <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
-              </label>
+    <>
+      <div className="overlay" onClick={() => { setKbVisible(false); onClose(); }}>
+        <div className={`modal ${kbVisible ? "modal--kb-open" : ""}`}
+          onClick={e => e.stopPropagation()}>
+          <div className="modal__head">
+            <h2>Add event</h2>
+            <button className="modal__close" onClick={onClose}>✕</button>
+          </div>
+          <div className="modal__body">
+
+            {/* Title — tappable field, shows keyboard */}
+            <div className="field">
+              <span>Title</span>
+              <div
+                className={`touch-input ${kbTarget === "title" && kbVisible ? "touch-input--active" : ""}`}
+                onPointerDown={() => focusField("title")}
+              >
+                {title || <span className="touch-input__placeholder">What's happening?</span>}
+                {kbTarget === "title" && kbVisible && <span className="touch-input__cursor" />}
+              </div>
             </div>
-          )}
-          <label className="field"><span>Location (optional)</span>
-            <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Where?" />
-          </label>
-        </div>
-        <div className="modal__foot">
-          <button className="btn-cancel" onClick={onClose}>Cancel</button>
-          <button className="btn-primary" onClick={save} disabled={saving || !title.trim()}>
-            {saving ? "Saving…" : "Save"}
-          </button>
+
+            {/* Who */}
+            <label className="field"><span>Who</span>
+              <select value={memberId} onChange={e => setMemberId(e.target.value)}
+                onFocus={() => setKbVisible(false)}>
+                {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            </label>
+
+            {/* Date */}
+            <label className="field"><span>Date</span>
+              <input type="date" value={dateStr}
+                onChange={e => setDateStr(e.target.value)}
+                onFocus={() => setKbVisible(false)} />
+            </label>
+
+            {/* All day toggle */}
+            <label className="field field--inline">
+              <input type="checkbox" checked={allDay}
+                onChange={e => setAllDay(e.target.checked)} />
+              <span>All day</span>
+            </label>
+
+            {/* Time pickers */}
+            {!allDay && (
+              <div className="field-row">
+                <label className="field"><span>Start</span>
+                  <input type="time" value={startTime}
+                    onChange={e => setStartTime(e.target.value)}
+                    onFocus={() => setKbVisible(false)} />
+                </label>
+                <label className="field"><span>End</span>
+                  <input type="time" value={endTime}
+                    onChange={e => setEndTime(e.target.value)}
+                    onFocus={() => setKbVisible(false)} />
+                </label>
+              </div>
+            )}
+
+            {/* Location */}
+            <div className="field">
+              <span>Location (optional)</span>
+              <div
+                className={`touch-input ${kbTarget === "location" && kbVisible ? "touch-input--active" : ""}`}
+                onPointerDown={() => focusField("location")}
+              >
+                {location || <span className="touch-input__placeholder">Where?</span>}
+                {kbTarget === "location" && kbVisible && <span className="touch-input__cursor" />}
+              </div>
+            </div>
+
+          </div>
+          <div className="modal__foot">
+            <button className="btn-cancel" onClick={onClose}>Cancel</button>
+            <button className="btn-primary" onClick={save} disabled={saving || !title.trim()}>
+              {saving ? "Saving…" : "Save"}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      <TouchKeyboard
+        visible={kbVisible}
+        value={kbValue()}
+        onChange={kbChange}
+        onDone={() => setKbVisible(false)}
+      />
+    </>
   );
 }
 
@@ -412,6 +478,18 @@ export default function App() {
   const [evModal, setEvModal]     = useState(null);
   const [settings, setSettings]   = useState(false);
   const [loading, setLoading]     = useState(true);
+  const [fontSize, setFontSize]   = useState(() => {
+    return parseInt(localStorage.getItem("famcal-fontsize") || "16", 10);
+  });
+
+  // Apply font size to root element
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${fontSize}px`;
+    localStorage.setItem("famcal-fontsize", fontSize);
+  }, [fontSize]);
+
+  function increaseFontSize() { setFontSize(f => Math.min(f + 1, 24)); }
+  function decreaseFontSize() { setFontSize(f => Math.max(f - 1, 12)); }
 
   const { members, reload: reloadMembers } = useMembers();
   const { events,  reload: reloadEvents  } = useEvents(weekStart);
@@ -469,6 +547,10 @@ export default function App() {
           )}
         </div>
         <button className="settings-btn" onClick={() => setSettings(true)}>⚙ Settings</button>
+        <div className="font-controls">
+          <button className="font-btn" onClick={decreaseFontSize}>A−</button>
+          <button className="font-btn" onClick={increaseFontSize}>A+</button>
+        </div>
       </header>
 
       <div className="cal">
