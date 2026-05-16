@@ -16,13 +16,15 @@ const SYNC_INTERVAL = parseInt(process.env.SYNC_INTERVAL_MINUTES || '15', 10);
 // Allow requests from the kiosk frontend (same machine) and phones on the local network
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow requests with no origin (direct API calls, curl) and anything on the LAN
-    if (!origin || origin.startsWith('http://192.168.') || origin.startsWith('http://10.') ||
-        origin.startsWith('http://172.') || origin === 'http://localhost:3000') {
-      cb(null, true);
-    } else {
-      cb(new Error('CORS: origin not allowed'));
-    }
+    // Allow requests with no origin (curl, same-origin) and anything on the LAN
+    if (!origin) return cb(null, true);
+    const allowed =
+      origin.startsWith('http://192.168.') ||
+      origin.startsWith('http://10.')      ||
+      origin.startsWith('http://172.')     ||
+      origin.startsWith('http://localhost') ||
+      origin.startsWith('http://pi.local');
+    allowed ? cb(null, true) : cb(new Error('CORS: origin not allowed'));
   },
   credentials: true,
 }));
