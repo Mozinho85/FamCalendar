@@ -51,7 +51,7 @@ router.get('/google/callback', async (req, res) => {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Skylight - Connected!</title>
+        <title>FamCalendar - Connected!</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
           body { font-family: sans-serif; max-width: 480px; margin: 40px auto; padding: 0 20px; }
@@ -95,7 +95,7 @@ router.post('/google/calendars', express.urlencoded({ extended: true }), async (
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Skylight - All Set!</title>
+      <title>FamCalendar - All Set!</title>
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <style>
         body { font-family: sans-serif; max-width: 480px; margin: 40px auto; padding: 0 20px; text-align: center; }

@@ -72,7 +72,7 @@ app.get('*', (req, res) => {
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.json({ message: 'Skylight backend is running. Frontend not yet built.' });
+    res.json({ message: 'FamCalendar backend is running. Frontend not yet built.' });
   }
 });
 
@@ -97,7 +97,7 @@ setTimeout(() => {
 }, 5000);
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Skylight backend running on port ${PORT}`);
+  console.log(`FamCalendar backend running on port ${PORT}`);
   console.log(`Google Calendar sync every ${SYNC_INTERVAL} minutes`);
   console.log(`Phone UI available at http://<pi-ip>:${PORT}`);
 });

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Skylight Calendar - Raspberry Pi 4B Setup Script
+# FamCalendar - Raspberry Pi 4B Setup Script
 # Run as: sudo bash setup-pi.sh
 # Tested on Raspberry Pi OS Bookworm (64-bit)
 
@@ -11,11 +11,11 @@ error()   { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
 [[ $EUID -ne 0 ]] && error "Run as root: sudo bash setup-pi.sh"
 
-SKYLIGHT_USER="pi"
-SKYLIGHT_DIR="/home/$SKYLIGHT_USER/skylight"
-DATA_DIR="$SKYLIGHT_DIR/data"
+FAMCAL_USER="pi"
+FAMCAL_DIR="/home/$FAMCAL_USER/FamCalendar"
+DATA_DIR="$FAMCAL_DIR/data"
 
-info "=== Skylight Calendar Pi Setup ==="
+info "=== FamCalendar Pi Setup ==="
 echo ""
 
 # ── 1. System updates ────────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ apt-get install -y -qq \
   git \
   sqlite3 \
   watchdog \
-  cronie \
+  cron \
   rsync
 
 # Use Node 20 LTS if current version is too old
@@ -60,7 +60,7 @@ USB_DEV=$(lsblk -rno NAME,TYPE,TRAN | awk '$2=="disk" && $3=="usb" {print $1}' |
 
 if [ -n "$USB_DEV" ]; then
   USB_PART="/dev/${USB_DEV}1"
-  USB_MOUNT="/media/skylight-data"
+  USB_MOUNT="/media/famcalendar-data"
 
   info "Found USB device: $USB_DEV"
   mkdir -p "$USB_MOUNT"
@@ -71,7 +71,7 @@ if [ -n "$USB_DEV" ]; then
     warn "Formatting $USB_PART as ext4 (ALL DATA ON IT WILL BE LOST)"
     echo "Press ENTER to confirm, CTRL+C to cancel"
     read -r
-    mkfs.ext4 -L skylight-data "$USB_PART"
+    mkfs.ext4 -L famcalendar-data "$USB_PART"
   fi
 
   USB_UUID=$(blkid -o value -s UUID "$USB_PART")
@@ -82,9 +82,9 @@ if [ -n "$USB_DEV" ]; then
   fi
 
   mount -a
-  mkdir -p "$USB_MOUNT/skylight"
-  chown -R "$SKYLIGHT_USER:$SKYLIGHT_USER" "$USB_MOUNT/skylight"
-  DATA_DIR="$USB_MOUNT/skylight"
+  mkdir -p "$USB_MOUNT/FamCalendar"
+  chown -R "$FAMCAL_USER:$FAMCAL_USER" "$USB_MOUNT/FamCalendar"
+  DATA_DIR="$USB_MOUNT/FamCalendar"
   info "Database will live on USB: $DATA_DIR"
 else
   warn "No USB device found — database will use SD card at $DATA_DIR"
@@ -118,41 +118,41 @@ EOF
 systemctl enable watchdog
 systemctl start watchdog
 
-# ── 6. Deploy Skylight backend ────────────────────────────────────────────────
-info "Setting up Skylight application..."
-mkdir -p "$SKYLIGHT_DIR"
+# ── 6. Deploy FamCalendar backend ────────────────────────────────────────────────
+info "Setting up FamCalendar application..."
+mkdir -p "$FAMCAL_DIR"
 mkdir -p "$DATA_DIR"
-chown -R "$SKYLIGHT_USER:$SKYLIGHT_USER" "$SKYLIGHT_DIR"
+chown -R "$FAMCAL_USER:$FAMCAL_USER" "$FAMCAL_DIR"
 
 # Write the DATA_DIR into the .env
-if [ ! -f "$SKYLIGHT_DIR/backend/.env" ]; then
-  if [ -f "$SKYLIGHT_DIR/backend/.env.example" ]; then
-    cp "$SKYLIGHT_DIR/backend/.env.example" "$SKYLIGHT_DIR/backend/.env"
-    sed -i "s|DB_PATH=.*|DB_PATH=$DATA_DIR/events.db|" "$SKYLIGHT_DIR/backend/.env"
+if [ ! -f "$FAMCAL_DIR/backend/.env" ]; then
+  if [ -f "$FAMCAL_DIR/backend/.env.example" ]; then
+    cp "$FAMCAL_DIR/backend/.env.example" "$FAMCAL_DIR/backend/.env"
+    sed -i "s|DB_PATH=.*|DB_PATH=$DATA_DIR/events.db|" "$FAMCAL_DIR/backend/.env"
     SESSION_SECRET=$(openssl rand -hex 32)
-    sed -i "s|SESSION_SECRET=.*|SESSION_SECRET=$SESSION_SECRET|" "$SKYLIGHT_DIR/backend/.env"
-    info "Created .env — edit $SKYLIGHT_DIR/backend/.env to add your Google credentials"
+    sed -i "s|SESSION_SECRET=.*|SESSION_SECRET=$SESSION_SECRET|" "$FAMCAL_DIR/backend/.env"
+    info "Created .env — edit $FAMCAL_DIR/backend/.env to add your Google credentials"
   fi
 fi
 
 # Install npm dependencies
-if [ -f "$SKYLIGHT_DIR/backend/package.json" ]; then
+if [ -f "$FAMCAL_DIR/backend/package.json" ]; then
   info "Installing Node dependencies..."
-  cd "$SKYLIGHT_DIR/backend"
-  sudo -u "$SKYLIGHT_USER" npm install --production
+  cd "$FAMCAL_DIR/backend"
+  sudo -u "$FAMCAL_USER" npm install --production
 fi
 
 # ── 7. systemd service for backend ───────────────────────────────────────────
-info "Creating systemd service for Skylight backend..."
-cat > /etc/systemd/system/skylight-backend.service << EOF
+info "Creating systemd service for FamCalendar backend..."
+cat > /etc/systemd/system/famcalendar-backend.service << EOF
 [Unit]
-Description=Skylight Calendar Backend
+Description=FamCalendar Backend
 After=network.target
 
 [Service]
 Type=simple
-User=$SKYLIGHT_USER
-WorkingDirectory=$SKYLIGHT_DIR/backend
+User=$FAMCAL_USER
+WorkingDirectory=$FAMCAL_DIR/backend
 ExecStart=/usr/bin/node src/index.js
 Restart=always
 RestartSec=10
@@ -165,8 +165,8 @@ WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
-systemctl enable skylight-backend
-systemctl start skylight-backend
+systemctl enable famcalendar-backend
+systemctl start famcalendar-backend
 
 # ── 8. Kiosk display setup ────────────────────────────────────────────────────
 info "Configuring kiosk display (landscape, 1200p)..."
@@ -176,54 +176,40 @@ if ! grep -q "display_rotate" /boot/firmware/config.txt 2>/dev/null; then
   echo "display_rotate=0" >> /boot/firmware/config.txt
 fi
 
-# Auto-login to desktop for kiosk user
-mkdir -p /etc/lightdm
-cat > /etc/lightdm/lightdm.conf << EOF
-[Seat:*]
-autologin-user=$SKYLIGHT_USER
-autologin-user-timeout=0
-user-session=openbox
-EOF
+# Pi OS Bookworm uses labwc (Wayland) not Openbox — configure labwc autostart
+info "Configuring labwc autostart for Chromium kiosk..."
+mkdir -p "/home/$FAMCAL_USER/.config/labwc"
+cat > "/home/$FAMCAL_USER/.config/labwc/autostart" << 'AUTOSTART'
+# Wait until the backend is actually responding before launching Chromium
+until curl -s http://localhost:3001/health > /dev/null; do sleep 1; done
 
-# Openbox autostart — launches Chromium in kiosk mode
-mkdir -p "/home/$SKYLIGHT_USER/.config/openbox"
-cat > "/home/$SKYLIGHT_USER/.config/openbox/autostart" << 'AUTOSTART'
-# Disable screen blanking and power management
-xset s off
-xset s noblank
-xset -dpms
-
-# Hide the cursor after 1 second of inactivity
-unclutter -idle 1 -root &
-
-# Wait for the backend to be ready
-sleep 5
-
-# Launch Chromium in kiosk mode
+# Launch Chromium in kiosk mode (Wayland)
 chromium-browser \
   --kiosk \
   --noerrdialogs \
   --disable-infobars \
   --no-first-run \
-  --disable-session-crashed-bubble \
+  --ozone-platform=wayland \
   --disable-features=TranslateUI \
+  --password-store=basic \
+  --use-mock-keychain \
   --check-for-update-interval=31536000 \
   --disk-cache-dir=/tmp/chromium-cache \
   --disk-cache-size=52428800 \
-  http://localhost:3000 &
+  http://localhost:3001 &
 AUTOSTART
 
-chown -R "$SKYLIGHT_USER:$SKYLIGHT_USER" "/home/$SKYLIGHT_USER/.config"
+chown -R "$FAMCAL_USER:$FAMCAL_USER" "/home/$FAMCAL_USER/.config"
 
 # ── 9. Backup cron job ────────────────────────────────────────────────────────
 info "Setting up nightly database backup..."
-BACKUP_SCRIPT="/home/$SKYLIGHT_USER/skylight/scripts/backup.sh"
+BACKUP_SCRIPT="/home/$FAMCAL_USER/FamCalendar/scripts/backup.sh"
 
 cat > "$BACKUP_SCRIPT" << BACKUP
 #!/bin/bash
-# Skylight nightly backup
+# FamCalendar nightly backup
 DB_PATH="$DATA_DIR/events.db"
-BACKUP_DIR="$SKYLIGHT_DIR/backups"
+BACKUP_DIR="$FAMCAL_DIR/backups"
 mkdir -p "\$BACKUP_DIR"
 
 # Keep last 30 days
@@ -237,23 +223,29 @@ echo "\$(date): Backup complete -> \$DEST"
 BACKUP
 
 chmod +x "$BACKUP_SCRIPT"
-chown "$SKYLIGHT_USER:$SKYLIGHT_USER" "$BACKUP_SCRIPT"
+chown "$FAMCAL_USER:$FAMCAL_USER" "$BACKUP_SCRIPT"
 
-# Add cron job
-(crontab -u "$SKYLIGHT_USER" -l 2>/dev/null; echo "0 3 * * * $BACKUP_SCRIPT >> $SKYLIGHT_DIR/logs/backup.log 2>&1") | \
-  sort -u | crontab -u "$SKYLIGHT_USER" -
+# Add backup + auto-update cron jobs
+UPDATE_SCRIPT="$FAMCAL_DIR/scripts/update.sh"
+chmod +x "$UPDATE_SCRIPT"
+(
+  crontab -u "$FAMCAL_USER" -l 2>/dev/null
+  echo "0 3 * * * $BACKUP_SCRIPT >> $FAMCAL_DIR/logs/backup.log 2>&1"
+  echo "*/5 * * * * $UPDATE_SCRIPT >> $FAMCAL_DIR/logs/update.log 2>&1"
+) | sort -u | crontab -u "$FAMCAL_USER" -
+info "Auto-update cron set — Pi will check GitHub every 5 minutes"
 
-mkdir -p "$SKYLIGHT_DIR/logs"
-chown -R "$SKYLIGHT_USER:$SKYLIGHT_USER" "$SKYLIGHT_DIR"
+mkdir -p "$FAMCAL_DIR/logs"
+chown -R "$FAMCAL_USER:$FAMCAL_USER" "$FAMCAL_DIR"
 
 # ── 10. Done ──────────────────────────────────────────────────────────────────
 echo ""
 info "=== Setup complete! ==="
 echo ""
 echo -e "${YELLOW}Next steps:${NC}"
-echo "  1. Edit $SKYLIGHT_DIR/backend/.env — add your Google OAuth credentials"
-echo "  2. Build and copy the React frontend to $SKYLIGHT_DIR/backend/public/"
-echo "  3. Run: sudo systemctl restart skylight-backend"
+echo "  1. Edit $FAMCAL_DIR/backend/.env — add your Google OAuth credentials"
+echo "  2. Build and copy the React frontend to $FAMCAL_DIR/backend/public/"
+echo "  3. Run: sudo systemctl restart famcalendar-backend"
 echo "  4. Reboot: sudo reboot"
 echo ""
 echo -e "${YELLOW}Google OAuth setup:${NC}"

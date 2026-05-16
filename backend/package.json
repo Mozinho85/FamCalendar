@@ -1,7 +1,7 @@
 {
-  "name": "skylight-backend",
+  "name": "famcalendar-backend",
   "version": "1.0.0",
-  "description": "Skylight calendar backend - local API + Google Calendar sync",
+  "description": "FamCalendar backend - local API + Google Calendar sync",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
