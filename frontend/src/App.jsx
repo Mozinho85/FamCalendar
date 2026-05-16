@@ -3,13 +3,35 @@ import "./App.css";
 
 const API = "/api";
 
+// ── Loading screen ────────────────────────────────────────────────────────────
+
+function LoadingScreen({ visible }) {
+  return (
+    <div className={`loading ${visible ? "" : "loading--gone"}`}>
+      <div className="loading__inner">
+        <div className="loading__rings">
+          <div className="ring ring--1" />
+          <div className="ring ring--2" />
+          <div className="ring ring--3" />
+        </div>
+        <div className="loading__dots">
+          <span /><span /><span /><span /><span /><span /><span />
+        </div>
+        <p className="loading__label">FamCalendar</p>
+      </div>
+    </div>
+  );
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function pad(n) { return String(n).padStart(2, "0"); }
 function formatTime(dt) { const d = new Date(dt); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
 function startOfWeek(date) {
   const d = new Date(date);
-  d.setDate(d.getDate() - d.getDay());
+  const day = d.getDay();
+  const diff = (day === 0) ? -6 : 1 - day; // Monday = 1, so shift Sunday back 6, others forward
+  d.setDate(d.getDate() + diff);
   d.setHours(0, 0, 0, 0);
   return d;
 }
@@ -29,7 +51,7 @@ function eventOnDay(ev, day) {
 
 const MONTHS = ["January","February","March","April","May","June",
                 "July","August","September","October","November","December"];
-const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const PALETTE = ["#e05a8a","#2db88a","#f09030","#3a9fe0","#8b6fde","#e06030","#10b981","#d946ef"];
 
 // ── Hooks ─────────────────────────────────────────────────────────────────────
@@ -389,10 +411,19 @@ export default function App() {
   const [addModal, setAddModal]   = useState(null);
   const [evModal, setEvModal]     = useState(null);
   const [settings, setSettings]   = useState(false);
+  const [loading, setLoading]     = useState(true);
 
   const { members, reload: reloadMembers } = useMembers();
   const { events,  reload: reloadEvents  } = useEvents(weekStart);
   const memberMap = Object.fromEntries(members.map(m => [m.id, m]));
+
+  // Hide loading screen once we have a response from the API
+  useEffect(() => {
+    if (members.length >= 0) {
+      const t = setTimeout(() => setLoading(false), 600);
+      return () => clearTimeout(t);
+    }
+  }, [members]);
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -420,6 +451,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <LoadingScreen visible={loading} />
       <header className="topbar">
         <div className="topbar__clock">
           <span className="clock">{pad(now.getHours())}:{pad(now.getMinutes())}</span>
