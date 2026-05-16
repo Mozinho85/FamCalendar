@@ -515,9 +515,15 @@ export default function App() {
                           onClick={e => { e.stopPropagation(); setEvModal({ event: ev, member: m }); }}
                         >
                           <span className="ev__title">{ev.title}</span>
-                          {!ev.all_day && <span className="ev__time">{formatTime(ev.start_datetime)}</span>}
-                          {ev.source === "google" && <span className="ev__g">G</span>}
-                          {ev.source === "ical"   && <span className="ev__ical">iCal</span>}
+                          <div className="ev__meta">
+                            {!ev.all_day && (
+                              <span className="ev__time">
+                                {formatTime(ev.start_datetime)}–{formatTime(ev.end_datetime)}
+                              </span>
+                            )}
+                            {ev.source === "google" && <span className="ev__g">G</span>}
+                            {ev.source === "ical"   && <span className="ev__ical">iCal</span>}
+                          </div>
                         </div>
                       ))}
                     </div>
