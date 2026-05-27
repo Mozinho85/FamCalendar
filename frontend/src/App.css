@@ -1015,3 +1015,107 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+/* ── Settings – Display section ────────────────────────────────────── */
+.s-section-divider {
+  height: 1px;
+  background: var(--border-md);
+  margin: 16px 0 12px;
+}
+
+.s-section-heading {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0 0 10px;
+}
+
+.s-display-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.s-label {
+  font-size: 0.8125rem;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.s-loc-search {
+  display: flex;
+  gap: 8px;
+}
+
+.s-input--loc { flex: 1; }
+
+.s-loc-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border-md);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+
+.s-loc-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
+  font-size: 0.8125rem;
+  color: var(--text-1);
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.s-loc-result:last-child { border-bottom: none; }
+.s-loc-result:hover { background: var(--bg-hover); }
+
+.s-loc-tz {
+  font-size: 0.7rem;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.s-unit-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border-md);
+  border-radius: 8px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.s-unit-btn {
+  padding: 6px 18px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.s-unit-btn + .s-unit-btn { border-left: 1px solid var(--border-md); }
+.s-unit-btn--on {
+  background: var(--accent);
+  color: #fff;
+}
+
+.s-select {
+  appearance: none;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-md);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 0.8125rem;
+  color: var(--text-1);
+  cursor: pointer;
+  width: fit-content;
+}
+.s-select:focus { outline: none; border-color: var(--accent); }

@@ -5,6 +5,8 @@ import { useFeedback } from "./useFeedback.js";
 import { useDimmer } from "./useDimmer.js";
 import { useDebounce } from "./useDebounce.js";
 import { useWeather } from "./useWeather.js";
+import { useSettings } from "./useSettings.js";
+import AmbientMode from "./AmbientMode.jsx";
 
 const API = "/api";
 
@@ -462,7 +464,7 @@ function UpdateButton() {
 
 // ── Settings Modal ────────────────────────────────────────────────────────────
 
-function SettingsModal({ members, onClose, onReload }) {
+function SettingsModal({ members, onClose, onReload, settings, onSettingsChange }) {
   const [editing, setEditing]     = useState(null);
   const [editName, setEditName]   = useState("");
   const [editColor, setEditColor] = useState(PALETTE[0]);
@@ -471,6 +473,35 @@ function SettingsModal({ members, onClose, onReload }) {
   const [newName, setNewName]     = useState("");
   const [newColor, setNewColor]   = useState(PALETTE[0]);
   const [busy, setBusy]           = useState(false);
+
+  // Display / ambient settings
+  const [locQuery,   setLocQuery]   = useState(settings?.locationName || "");
+  const [locResults, setLocResults] = useState([]);
+  const [locBusy,    setLocBusy]    = useState(false);
+
+  async function searchLocation() {
+    if (!locQuery.trim()) return;
+    setLocBusy(true);
+    setLocResults([]);
+    try {
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locQuery.trim())}&count=5&language=en&format=json`;
+      const res  = await fetch(url);
+      const data = await res.json();
+      setLocResults(data.results || []);
+    } catch {}
+    setLocBusy(false);
+  }
+
+  function pickLocation(r) {
+    onSettingsChange({
+      locationName: `${r.name}${r.admin1 ? ", " + r.admin1 : ""}, ${r.country}`,
+      locationLat:  r.latitude,
+      locationLon:  r.longitude,
+      timezone:     r.timezone || "UTC",
+    });
+    setLocQuery(`${r.name}${r.admin1 ? ", " + r.admin1 : ""}, ${r.country}`);
+    setLocResults([]);
+  }
 
   function startEdit(m) { setEditing(m.id); setEditName(m.name); setEditColor(m.color); }
 
@@ -590,6 +621,63 @@ function SettingsModal({ members, onClose, onReload }) {
           ) : (
             <button className="s-add-btn" onClick={() => setAddingNew(true)}>+ Add person</button>
           )}
+
+          {/* ── Display / Ambient settings ── */}
+          <div className="s-section-divider" />
+          <p className="s-section-heading">Display</p>
+
+          <div className="s-display-row">
+            <label className="s-label">Location</label>
+            <div className="s-loc-search">
+              <input
+                className="s-input s-input--loc"
+                value={locQuery}
+                onChange={e => { setLocQuery(e.target.value); setLocResults([]); }}
+                onKeyDown={e => e.key === "Enter" && searchLocation()}
+                placeholder="City name…"
+              />
+              <button className="btn-icon" onClick={searchLocation} disabled={locBusy}>
+                {locBusy ? "…" : "Search"}
+              </button>
+            </div>
+            {locResults.length > 0 && (
+              <ul className="s-loc-results">
+                {locResults.map((r, i) => (
+                  <li key={i} className="s-loc-result" onClick={() => pickLocation(r)}>
+                    {r.name}{r.admin1 ? `, ${r.admin1}` : ""}, {r.country}
+                    <span className="s-loc-tz">{r.timezone}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="s-display-row">
+            <label className="s-label">Temperature</label>
+            <div className="s-unit-toggle">
+              <button
+                className={`s-unit-btn ${settings?.tempUnit !== "fahrenheit" ? "s-unit-btn--on" : ""}`}
+                onClick={() => onSettingsChange({ tempUnit: "celsius" })}>°C</button>
+              <button
+                className={`s-unit-btn ${settings?.tempUnit === "fahrenheit" ? "s-unit-btn--on" : ""}`}
+                onClick={() => onSettingsChange({ tempUnit: "fahrenheit" })}>°F</button>
+            </div>
+          </div>
+
+          <div className="s-display-row">
+            <label className="s-label">Ambient after</label>
+            <select
+              className="s-select"
+              value={settings?.ambientIdleMinutes ?? 2}
+              onChange={e => onSettingsChange({ ambientIdleMinutes: Number(e.target.value) })}>
+              <option value={1}>1 minute</option>
+              <option value={2}>2 minutes</option>
+              <option value={5}>5 minutes</option>
+              <option value={10}>10 minutes</option>
+              <option value={15}>15 minutes</option>
+              <option value={30}>30 minutes</option>
+            </select>
+          </div>
         </div>
         <div className="modal__foot">
           <UpdateButton />
@@ -608,7 +696,7 @@ export default function App() {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(today));
   const [addModal, setAddModal]   = useState(null);
   const [evModal, setEvModal]     = useState(null);
-  const [settings, setSettings]   = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [loading, setLoading]     = useState(true);
   const [fontSize, setFontSize]   = useState(() => {
     return parseInt(localStorage.getItem("famcal-fontsize") || "16", 10);
@@ -624,8 +712,14 @@ export default function App() {
   function decreaseFontSize() { setFontSize(f => Math.max(f - 1, 12)); }
 
   const { tap, success, back } = useFeedback();
-  const dimmed  = useDimmer();
-  const weather = useWeather();
+  const { settings, update: updateSettings } = useSettings();
+  const dimmed  = useDimmer(settings.ambientIdleMinutes * 60 * 1000);
+  const { daily: weather, current: currentWeather } = useWeather({
+    lat:      settings.locationLat,
+    lon:      settings.locationLon,
+    timezone: settings.timezone,
+    tempUnit: settings.tempUnit,
+  });
 
   const { members, reload: reloadMembers } = useMembers();
   const { events,  reload: reloadEvents  } = useEvents(weekStart);
@@ -677,7 +771,7 @@ export default function App() {
   return (
     <div className="app">
       <LoadingScreen visible={loading} />
-      {dimmed && <div className="dim-overlay" />}
+      {dimmed && <AmbientMode current={currentWeather} settings={settings} />}
       <header className="topbar">
         <div className="topbar__clock">
           <span className="clock">{pad(now.getHours())}:{pad(now.getMinutes())}</span>
@@ -694,7 +788,7 @@ export default function App() {
             <button className="today-btn" onClick={handleToday}>Today</button>
           )}
         </div>
-        <button className="settings-btn" onClick={() => setSettings(true)}>⚙ Settings</button>
+        <button className="settings-btn" onClick={() => setShowSettings(true)}>⚙ Settings</button>
         <div className="font-controls">
           <button className="font-btn" onClick={decreaseFontSize}>A−</button>
           <button className="font-btn" onClick={increaseFontSize}>A+</button>
@@ -732,7 +826,7 @@ export default function App() {
             {members.length === 0 && (
               <div className="cal__empty">
                 No family members yet —&nbsp;
-                <button onClick={() => setSettings(true)}>open Settings</button>
+                <button onClick={() => setShowSettings(true)}>open Settings</button>
                 &nbsp;to add people.
               </div>
             )}
@@ -852,8 +946,9 @@ export default function App() {
         <EventModal event={evModal.event} member={memberMap[evModal.event.member_id]}
           onClose={() => setEvModal(null)} onDelete={deleteEvent} />
       )}
-      {settings && (
-        <SettingsModal members={members} onClose={() => setSettings(false)} onReload={reloadMembers} />
+      {showSettings && (
+        <SettingsModal members={members} settings={settings} onSettingsChange={updateSettings}
+          onClose={() => setShowSettings(false)} onReload={reloadMembers} />
       )}
     </div>
   );

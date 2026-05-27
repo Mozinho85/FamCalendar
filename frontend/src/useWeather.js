@@ -1,9 +1,4 @@
-import { useState, useEffect } from "react";
-
-// Open-Meteo — free, no API key required
-// Ammanford, Wales coordinates
-const LAT = 51.7956;
-const LON = -3.9994;
+import { useState, useEffect, useRef } from "react";
 
 const WMO = {
   0:  { icon: "☀️",  label: "Clear" },
@@ -37,16 +32,40 @@ function getWeatherInfo(code) {
   return WMO[code] || WMO[Math.floor(code / 10) * 10] || { icon: "🌡️", label: "Unknown" };
 }
 
-export function useWeather() {
-  const [weather, setWeather] = useState(null); // keyed by YYYY-MM-DD
+const DEFAULT_PARAMS = {
+  lat: 51.7956,
+  lon: -3.9994,
+  timezone: "Europe/London",
+  tempUnit: "celsius",
+};
+
+export function useWeather(params = {}) {
+  const { lat, lon, timezone, tempUnit } = { ...DEFAULT_PARAMS, ...params };
+
+  const [daily, setDaily]     = useState(null);
+  const [current, setCurrent] = useState(null);
+
+  // Track previous params to re-fetch when they change
+  const prevRef = useRef(null);
+  const key = `${lat},${lon},${timezone},${tempUnit}`;
 
   useEffect(() => {
     async function fetch_() {
       try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FLondon&forecast_days=7`;
+        const unitParam = tempUnit === "fahrenheit" ? "&temperature_unit=fahrenheit" : "";
+        const url = `https://api.open-meteo.com/v1/forecast`
+          + `?latitude=${lat}&longitude=${lon}`
+          + `&daily=weathercode,temperature_2m_max,temperature_2m_min`
+          + `&current=temperature_2m,weathercode`
+          + `&timezone=${encodeURIComponent(timezone)}`
+          + `&forecast_days=7`
+          + unitParam;
+
         const res  = await fetch(url);
         const data = await res.json();
-        const map  = {};
+
+        // Daily map keyed by YYYY-MM-DD
+        const map = {};
         data.daily.time.forEach((date, i) => {
           map[date] = {
             ...getWeatherInfo(data.daily.weathercode[i]),
@@ -54,13 +73,23 @@ export function useWeather() {
             min: Math.round(data.daily.temperature_2m_min[i]),
           };
         });
-        setWeather(map);
+        setDaily(map);
+
+        // Current conditions
+        if (data.current) {
+          setCurrent({
+            ...getWeatherInfo(data.current.weathercode),
+            temp: Math.round(data.current.temperature_2m),
+          });
+        }
       } catch {}
     }
-    fetch_();
-    const id = setInterval(fetch_, 60 * 60 * 1000); // refresh hourly
-    return () => clearInterval(id);
-  }, []);
 
-  return weather;
+    fetch_();
+    const id = setInterval(fetch_, 30 * 60 * 1000); // refresh every 30 min
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
+  return { daily, current };
 }

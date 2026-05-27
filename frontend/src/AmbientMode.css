@@ -1,0 +1,91 @@
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: #07070d;
+  background: radial-gradient(ellipse at 50% 45%, #111827 0%, #07070d 70%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: none;
+  animation: ambientIn 1.2s ease both;
+}
+
+@keyframes ambientIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.ambient__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+}
+
+.ambient__time {
+  display: flex;
+  align-items: baseline;
+  gap: 0.15em;
+  line-height: 1;
+  color: #f0f0f5;
+  font-size: clamp(80px, 18vw, 180px);
+  font-weight: 200;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ambient__colon {
+  animation: blink 2s step-start infinite;
+  opacity: 0.7;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.7; }
+  50%       { opacity: 0.2; }
+}
+
+.ambient__date {
+  font-size: clamp(18px, 2.4vw, 32px);
+  color: #6b7280;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  margin-top: -0.5rem;
+}
+
+.ambient__weather {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 2rem;
+  padding: 0.8rem 1.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ambient__weather-icon {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1;
+}
+
+.ambient__weather-temp {
+  font-size: clamp(1.6rem, 3.2vw, 2.8rem);
+  font-weight: 300;
+  color: #e5e7eb;
+  font-variant-numeric: tabular-nums;
+}
+
+.ambient__weather-label {
+  font-size: clamp(0.9rem, 1.5vw, 1.3rem);
+  color: #6b7280;
+  font-weight: 300;
+}
+
+.ambient__location {
+  font-size: clamp(0.8rem, 1.2vw, 1.1rem);
+  color: #374151;
+  margin-top: 0.5rem;
+  letter-spacing: 0.06em;
+}
