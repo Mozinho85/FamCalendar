@@ -214,6 +214,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   color: var(--text-2);
   font-size: 1.375rem;
   display: flex; align-items: center; justify-content: center;
+  touch-action: manipulation;
   /* transition removed for Pi performance */
 }
 .nav-btn:hover { background: var(--bg-hover); border-color: var(--border-md); color: var(--text-1); }
@@ -226,6 +227,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   color: var(--accent);
   font-size: 0.9375rem;
   font-weight: 500;
+  touch-action: manipulation;
   /* transition removed for Pi performance */
 }
 .today-btn:hover { background: #e0e5fd; }
@@ -427,6 +429,8 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   display: flex;
   flex-direction: column;
   gap: 5px;
+  touch-action: manipulation;
+  user-select: none;
   /* transition removed for Pi performance */
   min-height: 0;
   overflow: hidden;
@@ -448,6 +452,8 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   border-left: 3px solid var(--mc);
   cursor: pointer;
   overflow: hidden;
+  touch-action: manipulation;
+  user-select: none;
   /* transition removed for Pi performance */
   flex-shrink: 0;
 }
@@ -547,6 +553,49 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 }
 
 .modal--settings { width: 520px; }
+
+/* ── Add-event modal: near-fullscreen for kiosk touch use ── */
+.modal--add-event {
+  width: 92vw;
+  max-width: 92vw;
+  height: 92vh;
+  max-height: 92vh;
+}
+
+.modal__body--add-event {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 28px;
+  align-content: start;
+}
+
+.modal__body--add-event .field--full {
+  grid-column: 1 / -1;
+}
+
+/* Larger inputs in the add-event modal */
+.modal--add-event .field input,
+.modal--add-event .field select {
+  padding: 18px 20px;
+  font-size: 1.125rem;
+}
+
+/* Larger footer buttons in add-event modal */
+.modal--add-event .modal__foot .btn-primary,
+.modal--add-event .modal__foot .btn-cancel {
+  padding: 18px 48px;
+  font-size: 1.1rem;
+}
+
+/* Bigger checkbox in add-event modal */
+.modal--add-event .field--inline input[type="checkbox"] {
+  width: 28px;
+  height: 28px;
+}
+.modal--add-event .field--inline > span {
+  font-size: 1.1rem;
+}
+
 
 .modal__head {
   display: flex; align-items: center; justify-content: space-between;
@@ -926,7 +975,15 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   display: flex;
   align-items: center;
   gap: 2px;
+  touch-action: manipulation;
   transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+/* Taller touch input inside add-event modal */
+.modal--add-event .touch-input {
+  min-height: 64px;
+  padding: 18px 20px;
+  font-size: 1.125rem;
 }
 
 .touch-input--active {
@@ -1031,6 +1088,8 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   border-radius: var(--r-md);
   border: 1px solid var(--border);
   cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
 }
 
 .today-ev__bar {

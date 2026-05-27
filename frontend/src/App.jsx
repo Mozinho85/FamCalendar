@@ -162,16 +162,16 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
   return (
     <>
       <div className="overlay" onClick={() => { setKbVisible(false); onClose(); }}>
-        <div className={`modal ${kbVisible ? "modal--kb-open" : ""}`}
+        <div className={`modal modal--add-event ${kbVisible ? "modal--kb-open" : ""}`}
           onClick={e => e.stopPropagation()}>
           <div className="modal__head">
             <h2>Add event</h2>
             <button className="modal__close" onClick={onClose}>✕</button>
           </div>
-          <div className="modal__body">
+          <div className="modal__body modal__body--add-event">
 
             {/* Title — tappable field, shows keyboard */}
-            <div className="field">
+            <div className="field field--full">
               <span>Title</span>
               <div
                 className={`touch-input ${kbTarget === "title" && kbVisible ? "touch-input--active" : ""}`}
@@ -198,7 +198,7 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
             </label>
 
             {/* All day toggle */}
-            <label className="field field--inline">
+            <label className="field field--inline field--full">
               <input type="checkbox" checked={allDay}
                 onChange={e => setAllDay(e.target.checked)} />
               <span>All day</span>
@@ -206,7 +206,7 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
 
             {/* Time pickers */}
             {!allDay && (
-              <div className="field-row">
+              <div className="field-row field--full">
                 <label className="field"><span>Start</span>
                   <input type="time" value={startTime}
                     onChange={e => setStartTime(e.target.value)}
@@ -221,7 +221,7 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
             )}
 
             {/* Location */}
-            <div className="field">
+            <div className="field field--full">
               <span>Location (optional)</span>
               <div
                 className={`touch-input ${kbTarget === "location" && kbVisible ? "touch-input--active" : ""}`}
@@ -233,7 +233,7 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
             </div>
 
             {/* Important */}
-            <label className="field field--inline">
+            <label className="field field--inline field--full">
               <input type="checkbox" checked={important}
                 onChange={e => setImportant(e.target.checked)} />
               <span>⭐ Mark as important (shows countdown)</span>
@@ -740,7 +740,7 @@ export default function App() {
 
   const { tap, success, back } = useFeedback();
   const { settings, update: updateSettings } = useSettings();
-  const { dimmed, activate: activateAmbient } = useDimmer(settings.ambientIdleMinutes * 60 * 1000);
+  const { dimmed, waking, activate: activateAmbient } = useDimmer(settings.ambientIdleMinutes * 60 * 1000);
   const { daily: weather, current: currentWeather, hourly: hourlyWeather } = useWeather({
     lat:      settings.locationLat,
     lon:      settings.locationLon,
@@ -757,11 +757,11 @@ export default function App() {
     .filter(e => eventOnDay(e, today))
     .sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime));
 
-  const handlePrevWeek = useDebounce(useCallback(() => { tap(); setWeekStart(w => addDays(w, -7)); }, [tap]), 300);
-  const handleNextWeek = useDebounce(useCallback(() => { tap(); setWeekStart(w => addDays(w,  7)); }, [tap]), 300);
-  const handleToday    = useDebounce(useCallback(() => { tap(); setWeekStart(startOfWeek(today)); }, [tap, today]), 300);
-  const handleCellTap  = useDebounce(useCallback((member, day) => { tap(); setAddModal({ member, date: day }); }, [tap]), 300);
-  const handleEventTap = useDebounce(useCallback((ev, member) => { tap(); setEvModal({ event: ev, member }); }, [tap]), 300);
+  const handlePrevWeek = useDebounce(useCallback(() => { tap(); setWeekStart(w => addDays(w, -7)); }, [tap]), 600);
+  const handleNextWeek = useDebounce(useCallback(() => { tap(); setWeekStart(w => addDays(w,  7)); }, [tap]), 600);
+  const handleToday    = useDebounce(useCallback(() => { tap(); setWeekStart(startOfWeek(today)); }, [tap, today]), 600);
+  const handleCellTap  = useDebounce(useCallback((member, day) => { if (waking) return; tap(); setAddModal({ member, date: day }); }, [tap, waking]), 600);
+  const handleEventTap = useDebounce(useCallback((ev, member) => { if (waking) return; tap(); setEvModal({ event: ev, member }); }, [tap, waking]), 600);
 
   // Swipe gestures
   const touchStartRef = useRef(null);
@@ -772,7 +772,7 @@ export default function App() {
     if (!touchStartRef.current) return;
     const { x: x0, y: y0, wasAmbient } = touchStartRef.current;
     touchStartRef.current = null;
-    if (wasAmbient) return;
+    if (wasAmbient || waking) return;
     const dx = e.changedTouches[0].clientX - x0;
     const dy = e.changedTouches[0].clientY - y0;
     const THRESHOLD = 60;
