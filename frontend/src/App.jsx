@@ -606,7 +606,9 @@ function SettingsModal({ members, onClose, onReload, settings, onSettingsChange 
                   </div>
                   {expanded === m.id && (
                     <div className="s-expanded">
-                      <p className="s-section-label" style={{ marginTop: 4 }}>iCal feeds</p>
+                      <p className="s-section-label">Photo</p>
+                      <AvatarUpload member={m} onReload={onReload} />
+                      <p className="s-section-label" style={{ marginTop: 12 }}>iCal feeds</p>
                       <IcalManager member={m} onReload={onReload} />
                       {m.google_connected ? (
                         <p className="s-note" style={{ marginTop: 8 }}>✓ Google Calendar connected</p>
