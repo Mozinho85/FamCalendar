@@ -728,6 +728,50 @@ function SettingsModal({ members, onClose, onReload, settings, onSettingsChange 
   );
 }
 
+// ── Upcoming important events ─────────────────────────────────────────────────
+
+function useUpcomingImportant() {
+  const [events, setEvents] = useState([]);
+  const load = useCallback(async () => {
+    const start = new Date();
+    const end   = addDays(start, 180);
+    try {
+      const r   = await fetch(`${API}/events?start=${start.toISOString()}&end=${end.toISOString()}`);
+      const all = await r.json();
+      setEvents(
+        all
+          .filter(e => e.important && daysUntil(e.start_datetime) >= 0)
+          .sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime))
+      );
+    } catch {}
+  }, []);
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [load]);
+  return events;
+}
+
+function CountdownCard({ event }) {
+  const start   = new Date(event.start_datetime);
+  const days    = daysUntil(event.start_datetime);
+  const dayName = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][start.getDay()];
+  const dateStr = `${start.getDate()} ${MONTHS[start.getMonth()]}`;
+  const isToday = days === 0;
+
+  return (
+    <div className={`cd-card ${isToday ? "cd-card--today" : ""}`}>
+      <div className="cd-card__date">{dayName}, {dateStr}</div>
+      <div className="cd-card__number">{isToday ? "🎉" : days}</div>
+      <div className="cd-card__label">
+        {isToday ? "Today!" : days === 1 ? "day until" : "days until"}
+      </div>
+      <div className="cd-card__name">{event.title}</div>
+    </div>
+  );
+}
+
 // ── Main App ──────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -763,6 +807,7 @@ export default function App() {
 
   const { members, reload: reloadMembers } = useMembers();
   const { events,  reload: reloadEvents  } = useEvents(weekStart);
+  const countdownEvents                    = useUpcomingImportant();
   const memberMap = Object.fromEntries(members.map(m => [m.id, m]));
 
   // Today's events for the sidebar panel
@@ -952,50 +997,63 @@ export default function App() {
           </div>
         </div>
 
-        {/* ── Today panel ── */}
-        <aside className="today-panel">
-          <div className="today-panel__head">
-            <div className="today-panel__title">Today</div>
-            <div className="today-panel__date">
-              {today.getDate()} {MONTHS[today.getMonth()]}
+        {/* ── Right sidebar ── */}
+        <div className="sidebar">
+          <aside className="today-panel">
+            <div className="today-panel__head">
+              <div className="today-panel__title">Today</div>
+              <div className="today-panel__date">
+                {today.getDate()} {MONTHS[today.getMonth()]}
+              </div>
             </div>
-          </div>
-          <div className="today-panel__body">
-            {todayEvents.length === 0 && (
-              <p className="today-panel__empty">Nothing on today</p>
-            )}
-            {todayEvents.map(ev => {
-              const member = memberMap[ev.member_id];
-              const color  = ev.color || member?.color || "#4f6ef7";
-              return (
-                <div key={ev.id} className="today-ev" style={{ "--mc": color }}
-                  onClick={() => handleEventTap(ev, member)}>
-                  <div className="today-ev__bar" />
-                  <div className="today-ev__info">
-                    <div className="today-ev__title">{ev.title}</div>
-                    <div className="today-ev__meta">
-                      {ev.all_day
-                        ? <span>All day</span>
-                        : <span>{formatTime(ev.start_datetime)}–{formatTime(ev.end_datetime)}</span>
-                      }
-                      {member && <span>· {member.name}</span>}
+            <div className="today-panel__body">
+              {todayEvents.length === 0 && (
+                <p className="today-panel__empty">Nothing on today</p>
+              )}
+              {todayEvents.map(ev => {
+                const member = memberMap[ev.member_id];
+                const color  = ev.color || member?.color || "#4f6ef7";
+                return (
+                  <div key={ev.id} className="today-ev" style={{ "--mc": color }}
+                    onClick={() => handleEventTap(ev, member)}>
+                    <div className="today-ev__bar" />
+                    <div className="today-ev__info">
+                      <div className="today-ev__title">{ev.title}</div>
+                      <div className="today-ev__meta">
+                        {ev.all_day
+                          ? <span>All day</span>
+                          : <span>{formatTime(ev.start_datetime)}–{formatTime(ev.end_datetime)}</span>
+                        }
+                        {member && <span>· {member.name}</span>}
+                      </div>
                     </div>
+                    {member?.avatar_url ? (
+                      <img src={member.avatar_url} alt={member.name} className="today-ev__avatar" />
+                    ) : member ? (
+                      <div className="today-ev__initial" style={{ background: member.color }}>
+                        {member.name[0]}
+                      </div>
+                    ) : null}
                   </div>
-                  {member?.avatar_url ? (
-                    <img src={member.avatar_url} alt={member.name} className="today-ev__avatar" />
-                  ) : member ? (
-                    <div className="today-ev__initial" style={{ background: member.color }}>
-                      {member.name[0]}
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-          <button className="today-panel__add" onClick={() => handleCellTap(members[0], today)}>
-            + Add today
-          </button>
-        </aside>
+                );
+              })}
+            </div>
+            <button className="today-panel__add" onClick={() => handleCellTap(members[0], today)}>
+              + Add today
+            </button>
+          </aside>
+
+          {countdownEvents.length > 0 && (
+            <div className="countdown-panel">
+              <div className="countdown-panel__head">Upcoming</div>
+              <div className="countdown-panel__body">
+                {countdownEvents.map(ev => (
+                  <CountdownCard key={ev.id} event={ev} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {addModal && (
