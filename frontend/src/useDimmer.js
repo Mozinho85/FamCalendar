@@ -28,5 +28,10 @@ export function useDimmer(idleMs = DEFAULT_IDLE_MS) {
     };
   }, []);
 
-  return dimmed;
+  function activate() {
+    clearTimeout(timer.current);
+    setDimmed(true);
+  }
+
+  return { dimmed, activate };
 }

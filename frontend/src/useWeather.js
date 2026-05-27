@@ -44,6 +44,7 @@ export function useWeather(params = {}) {
 
   const [daily, setDaily]     = useState(null);
   const [current, setCurrent] = useState(null);
+  const [hourly, setHourly]   = useState(null);
 
   // Track previous params to re-fetch when they change
   const prevRef = useRef(null);
@@ -56,6 +57,7 @@ export function useWeather(params = {}) {
         const url = `https://api.open-meteo.com/v1/forecast`
           + `?latitude=${lat}&longitude=${lon}`
           + `&daily=weathercode,temperature_2m_max,temperature_2m_min`
+          + `&hourly=temperature_2m,weathercode,precipitation_probability`
           + `&current=temperature_2m,weathercode`
           + `&timezone=${encodeURIComponent(timezone)}`
           + `&forecast_days=7`
@@ -82,6 +84,24 @@ export function useWeather(params = {}) {
             temp: Math.round(data.current.temperature_2m),
           });
         }
+
+        // Hourly for today
+        if (data.hourly) {
+          const today = new Date();
+          const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+          const arr = [];
+          data.hourly.time.forEach((t, i) => {
+            if (!t.startsWith(todayStr)) return;
+            arr.push({
+              timeStr: t.slice(11, 16),
+              hour: parseInt(t.slice(11, 13), 10),
+              ...getWeatherInfo(data.hourly.weathercode[i]),
+              temp: Math.round(data.hourly.temperature_2m[i]),
+              precip: data.hourly.precipitation_probability?.[i] ?? 0,
+            });
+          });
+          setHourly(arr);
+        }
       } catch {}
     }
 
@@ -91,5 +111,5 @@ export function useWeather(params = {}) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  return { daily, current };
+  return { daily, current, hourly };
 }

@@ -713,8 +713,8 @@ export default function App() {
 
   const { tap, success, back } = useFeedback();
   const { settings, update: updateSettings } = useSettings();
-  const dimmed  = useDimmer(settings.ambientIdleMinutes * 60 * 1000);
-  const { daily: weather, current: currentWeather } = useWeather({
+  const { dimmed, activate: activateAmbient } = useDimmer(settings.ambientIdleMinutes * 60 * 1000);
+  const { daily: weather, current: currentWeather, hourly: hourlyWeather } = useWeather({
     lat:      settings.locationLat,
     lon:      settings.locationLon,
     timezone: settings.timezone,
@@ -735,6 +735,26 @@ export default function App() {
   const handleToday    = useDebounce(useCallback(() => { tap(); setWeekStart(startOfWeek(today)); }, [tap, today]), 300);
   const handleCellTap  = useDebounce(useCallback((member, day) => { tap(); setAddModal({ member, date: day }); }, [tap]), 300);
   const handleEventTap = useDebounce(useCallback((ev, member) => { tap(); setEvModal({ event: ev, member }); }, [tap]), 300);
+
+  // Swipe gestures
+  const touchStartRef = useRef(null);
+  function onTouchStart(e) {
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, wasAmbient: dimmed };
+  }
+  function onTouchEnd(e) {
+    if (!touchStartRef.current) return;
+    const { x: x0, y: y0, wasAmbient } = touchStartRef.current;
+    touchStartRef.current = null;
+    if (wasAmbient) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    const dy = e.changedTouches[0].clientY - y0;
+    const THRESHOLD = 60;
+    if (Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > THRESHOLD) {
+      dx < 0 ? handleNextWeek() : handlePrevWeek();
+    } else if (dy > THRESHOLD && dy > Math.abs(dx) * 1.5) {
+      activateAmbient();
+    }
+  }
 
   // Hide loading screen once we have a response from the API
   useEffect(() => {
@@ -769,9 +789,9 @@ export default function App() {
   const isThisWeek = isSameDay(weekStart, startOfWeek(today));
 
   return (
-    <div className="app">
+    <div className="app" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <LoadingScreen visible={loading} />
-      {dimmed && <AmbientMode current={currentWeather} settings={settings} />}
+      {dimmed && <AmbientMode current={currentWeather} hourly={hourlyWeather} daily={weather} settings={settings} />}
       <header className="topbar">
         <div className="topbar__clock">
           <span className="clock">{pad(now.getHours())}:{pad(now.getMinutes())}</span>
