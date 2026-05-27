@@ -386,3 +386,91 @@ html, body, #root {
 .mev-google-note { font-size: 13px; color: var(--text-3); font-style: italic; }
 
 ::-webkit-scrollbar { display: none; }
+
+/* ── Topbar settings button ──────────────────────────────────────────── */
+.m-topbar__settings {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 17px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ── Avatar rows in sheet ────────────────────────────────────────────── */
+.m-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.m-avatar-row:last-child { border-bottom: none; }
+
+.m-avatar-circle {
+  position: relative;
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--mc) 15%, white);
+  border: 2px solid color-mix(in srgb, var(--mc) 35%, white);
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; font-weight: 600;
+  color: var(--mc, #4f6ef7);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.m-avatar-circle__img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.m-avatar-circle__edit {
+  position: absolute; inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.m-avatar-circle:active .m-avatar-circle__edit { opacity: 1; }
+
+.m-avatar-row__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.m-avatar-row__name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-1);
+}
+
+.m-avatar-row__btns {
+  display: flex;
+  gap: 8px;
+}
+
+.m-avatar-row__btn {
+  padding: 7px 16px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border-md);
+  color: var(--text-2);
+  font-size: 14px;
+  font-family: var(--font);
+  cursor: pointer;
+}
+
+.m-avatar-row__btn--danger {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}

@@ -407,6 +407,10 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   flex-shrink: 0;
 }
 
+.cal__avatar--img {
+  object-fit: cover;
+}
+
 .cal__member-name {
   font-size: 0.8125rem;
   font-weight: 500;
@@ -679,6 +683,71 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   display: flex; align-items: center; justify-content: center;
   font-size: 0.9375rem; font-weight: 600; color: white;
   flex-shrink: 0;
+}
+
+/* Compact avatar in member row — tappable to upload */
+.s-avatar-btn {
+  position: relative;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.s-avatar-btn__img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.s-avatar-btn__initial {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9375rem; font-weight: 600; color: white;
+}
+
+.s-avatar-btn__overlay {
+  position: absolute; inset: 0;
+  background: rgba(0, 0, 0, 0.52);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.s-avatar-btn:hover .s-avatar-btn__overlay,
+.s-avatar-btn:active .s-avatar-btn__overlay { opacity: 1; }
+
+/* Full avatar-upload in expanded section */
+.avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-upload__preview {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--mc) 15%, white);
+  border: 2px solid color-mix(in srgb, var(--mc) 40%, white);
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar-upload__img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+
+.avatar-upload__initial {
+  font-size: 1.4rem; font-weight: 600;
+  color: var(--mc);
+}
+
+.avatar-upload__btns {
+  display: flex; flex-direction: column; gap: 6px;
 }
 
 .s-member__name { flex: 1; font-size: 1.0rem; font-weight: 500; color: var(--text-1); }

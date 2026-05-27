@@ -37,6 +37,40 @@ app.use('/api/events',  eventsRouter);
 app.use('/api/members', membersRouter);
 app.use('/auth',        authRouter);
 
+// App settings — shared across all devices
+const SETTINGS_DEFAULTS = {
+  locationName: "Ammanford",
+  locationLat: 51.7956,
+  locationLon: -3.9994,
+  timezone: "Europe/London",
+  tempUnit: "celsius",
+  ambientIdleMinutes: 2,
+};
+
+app.get('/api/settings', (req, res) => {
+  const db = require('./db/database');
+  const rows = db.prepare('SELECT key, value FROM app_settings').all();
+  const stored = Object.fromEntries(rows.map(r => [r.key, JSON.parse(r.value)]));
+  res.json({ ...SETTINGS_DEFAULTS, ...stored });
+});
+
+app.put('/api/settings', (req, res) => {
+  const db = require('./db/database');
+  const upsert = db.prepare(
+    'INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+  );
+  const allowed = new Set(Object.keys(SETTINGS_DEFAULTS));
+  const upsertMany = db.transaction(updates => {
+    for (const [k, v] of Object.entries(updates)) {
+      if (allowed.has(k)) upsert.run(k, JSON.stringify(v));
+    }
+  });
+  upsertMany(req.body);
+  const rows = db.prepare('SELECT key, value FROM app_settings').all();
+  const stored = Object.fromEntries(rows.map(r => [r.key, JSON.parse(r.value)]));
+  res.json({ ...SETTINGS_DEFAULTS, ...stored });
+});
+
 // Sync status endpoint
 app.get('/api/sync/status', (req, res) => {
   const db = require('./db/database');

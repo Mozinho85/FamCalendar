@@ -55,8 +55,8 @@
 }
 
 .ambient__date {
-  font-size: clamp(18px, 2.4vw, 32px);
-  color: #6b7280;
+  font-size: clamp(22px, 2.8vw, 38px);
+  color: #c9ccd4;
   font-weight: 300;
   letter-spacing: 0.04em;
   margin-top: -0.5rem;
@@ -86,14 +86,14 @@
 }
 
 .ambient__weather-label {
-  font-size: clamp(0.9rem, 1.5vw, 1.3rem);
-  color: #6b7280;
+  font-size: clamp(1rem, 1.6vw, 1.4rem);
+  color: #a8b0c0;
   font-weight: 300;
 }
 
 .ambient__location {
-  font-size: clamp(0.8rem, 1.2vw, 1.1rem);
-  color: #374151;
+  font-size: clamp(0.9rem, 1.3vw, 1.15rem);
+  color: #8892a4;
   margin-top: 0.5rem;
   letter-spacing: 0.06em;
 }
@@ -110,8 +110,8 @@
 }
 
 .ambient__section-label {
-  font-size: clamp(0.65rem, 1vw, 0.85rem);
-  color: #374151;
+  font-size: clamp(0.7rem, 1.05vw, 0.9rem);
+  color: #7c8699;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 400;
@@ -144,8 +144,8 @@
 }
 
 .ambient__hour-time {
-  font-size: clamp(0.65rem, 1vw, 0.85rem);
-  color: #4b5563;
+  font-size: clamp(0.7rem, 1.1vw, 0.95rem);
+  color: #9ca3af;
   font-variant-numeric: tabular-nums;
 }
 
@@ -192,8 +192,8 @@
 }
 
 .ambient__weekday-name {
-  font-size: clamp(0.65rem, 1vw, 0.85rem);
-  color: #4b5563;
+  font-size: clamp(0.7rem, 1.1vw, 0.9rem);
+  color: #9ca3af;
   letter-spacing: 0.04em;
 }
 
@@ -210,8 +210,8 @@
 }
 
 .ambient__weekday-min {
-  font-size: clamp(0.65rem, 0.95vw, 0.82rem);
-  color: #4b5563;
+  font-size: clamp(0.7rem, 1vw, 0.87rem);
+  color: #9ca3af;
   font-weight: 300;
   font-variant-numeric: tabular-nums;
 }

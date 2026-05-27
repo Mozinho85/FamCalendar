@@ -72,6 +72,11 @@ function migrate() {
       FOREIGN KEY (member_id) REFERENCES family_members(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_events_start    ON events(start_datetime);
     CREATE INDEX IF NOT EXISTS idx_events_member   ON events(member_id);
     CREATE INDEX IF NOT EXISTS idx_events_source   ON events(source);

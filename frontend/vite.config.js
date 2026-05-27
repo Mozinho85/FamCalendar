@@ -7,8 +7,9 @@ export default defineConfig({
     port: 3000,
     host: '0.0.0.0',
     proxy: {
-      '/api': 'http://localhost:3001',
-      '/auth': 'http://localhost:3001',
+      '/api':     'http://localhost:3001',
+      '/auth':    'http://localhost:3001',
+      '/avatars': 'http://localhost:3001',
     }
   },
   build: {

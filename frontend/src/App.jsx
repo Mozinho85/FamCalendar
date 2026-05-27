@@ -364,7 +364,7 @@ function IcalManager({ member, onReload }) {
   );
 }
 
-function AvatarUpload({ member, onReload }) {
+function AvatarUpload({ member, onReload, compact = false }) {
   const fileRef = useRef(null);
   const [busy, setBusy] = useState(false);
 
@@ -377,6 +377,7 @@ function AvatarUpload({ member, onReload }) {
     await fetch(`${API}/members/${member.id}/avatar`, { method: 'POST', body: form });
     setBusy(false);
     onReload();
+    e.target.value = "";
   }
 
   async function handleRemove() {
@@ -384,30 +385,43 @@ function AvatarUpload({ member, onReload }) {
     onReload();
   }
 
+  const input = (
+    <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
+  );
+
+  if (compact) {
+    return (
+      <div className="s-avatar-btn" onClick={() => !busy && fileRef.current?.click()} title="Tap to change photo">
+        {member.avatar_url
+          ? <img src={member.avatar_url} alt={member.name} className="s-avatar-btn__img" />
+          : <div className="s-avatar-btn__initial" style={{ background: member.color }}>{member.name[0]}</div>
+        }
+        {busy
+          ? <div className="s-avatar-btn__overlay">…</div>
+          : <div className="s-avatar-btn__overlay">📷</div>
+        }
+        {input}
+      </div>
+    );
+  }
+
   return (
     <div className="avatar-upload">
       <div className="avatar-upload__preview" style={{ "--mc": member.color }}>
-        {member.avatar_url ? (
-          <img src={member.avatar_url} alt={member.name} className="avatar-upload__img" />
-        ) : (
-          <div className="avatar-upload__initial">{member.name[0]}</div>
-        )}
+        {member.avatar_url
+          ? <img src={member.avatar_url} alt={member.name} className="avatar-upload__img" />
+          : <div className="avatar-upload__initial">{member.name[0]}</div>
+        }
       </div>
       <div className="avatar-upload__btns">
-        <button className="btn-icon" onClick={() => fileRef.current.click()} disabled={busy}>
+        <button className="btn-icon" onClick={() => fileRef.current?.click()} disabled={busy}>
           {busy ? "Uploading…" : "📷 Upload photo"}
         </button>
         {member.avatar_url && (
           <button className="btn-icon btn-icon--danger" onClick={handleRemove}>✕ Remove</button>
         )}
       </div>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        style={{ display: 'none' }}
-        onChange={handleFile}
-      />
+      {input}
     </div>
   );
 }
@@ -573,7 +587,7 @@ function SettingsModal({ members, onClose, onReload, settings, onSettingsChange 
               ) : (
                 <>
                   <div className="s-member__row">
-                    <div className="s-avatar" style={{ background: m.color }}>{m.name[0]}</div>
+                    <AvatarUpload member={m} onReload={onReload} compact />
                     <span className="s-member__name">{m.name}</span>
                     {m.google_connected && <span className="badge-g" title="Google Calendar connected">G</span>}
                     {(m.ical_urls?.length > 0) && (
@@ -592,9 +606,7 @@ function SettingsModal({ members, onClose, onReload, settings, onSettingsChange 
                   </div>
                   {expanded === m.id && (
                     <div className="s-expanded">
-                      <p className="s-section-label">Photo</p>
-                      <AvatarUpload member={m} onReload={onReload} />
-                      <p className="s-section-label" style={{ marginTop: 12 }}>iCal feeds</p>
+                      <p className="s-section-label" style={{ marginTop: 4 }}>iCal feeds</p>
                       <IcalManager member={m} onReload={onReload} />
                       {m.google_connected ? (
                         <p className="s-note" style={{ marginTop: 8 }}>✓ Google Calendar connected</p>

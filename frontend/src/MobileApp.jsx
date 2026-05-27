@@ -272,6 +272,76 @@ function AgendaDay({ date, events, members, onEventTap, onAddTap }) {
   );
 }
 
+// ── Avatar Sheet (mobile) ─────────────────────────────────────────────────────
+
+function MobileAvatarRow({ member, onReload }) {
+  const fileRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+
+  async function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setBusy(true);
+    const form = new FormData();
+    form.append('avatar', file);
+    await fetch(`${API}/members/${member.id}/avatar`, { method: 'POST', body: form });
+    setBusy(false);
+    onReload();
+    e.target.value = "";
+  }
+
+  async function handleRemove() {
+    await fetch(`${API}/members/${member.id}/avatar`, { method: 'DELETE' });
+    onReload();
+  }
+
+  return (
+    <div className="m-avatar-row">
+      <div className="m-avatar-circle" style={{ '--mc': member.color }}
+        onClick={() => !busy && fileRef.current?.click()}>
+        {member.avatar_url
+          ? <img src={member.avatar_url} alt={member.name} className="m-avatar-circle__img" />
+          : <span>{member.name[0]}</span>
+        }
+        <div className="m-avatar-circle__edit">{busy ? "…" : "📷"}</div>
+      </div>
+      <div className="m-avatar-row__info">
+        <span className="m-avatar-row__name">{member.name}</span>
+        <div className="m-avatar-row__btns">
+          <button className="m-avatar-row__btn" onClick={() => fileRef.current?.click()} disabled={busy}>
+            {busy ? "Uploading…" : "Change photo"}
+          </button>
+          {member.avatar_url && (
+            <button className="m-avatar-row__btn m-avatar-row__btn--danger" onClick={handleRemove}>
+              Remove
+            </button>
+          )}
+        </div>
+      </div>
+      <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
+    </div>
+  );
+}
+
+function MobileAvatarSheet({ members, onClose, onReload }) {
+  return (
+    <div className="sheet-overlay" onClick={onClose}>
+      <div className="sheet" onClick={e => e.stopPropagation()}>
+        <div className="sheet__handle" />
+        <div className="sheet__head">
+          <h2>Member photos</h2>
+          <button className="sheet__close" onClick={onClose}>✕</button>
+        </div>
+        <div className="sheet__body">
+          {members.map(m => (
+            <MobileAvatarRow key={m.id} member={m} onReload={onReload} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Mobile App ───────────────────────────────────────────────────────────
 
 export default function MobileApp() {
@@ -281,7 +351,7 @@ export default function MobileApp() {
   const [selectedDate, setSelectedDate] = useState(new Date(today));
   const [addSheet, setAddSheet]         = useState(false);
   const [evSheet, setEvSheet]           = useState(null);
-  const [view, setView]                 = useState("agenda"); // agenda | members
+  const [avatarSheet, setAvatarSheet]   = useState(false);
 
   const windowStart = addDays(today, -7);
   const windowEnd   = addDays(today, 30);
@@ -315,6 +385,7 @@ export default function MobileApp() {
           </div>
         </div>
         <div className="m-topbar__title">FamCalendar</div>
+        <button className="m-topbar__settings" onClick={() => setAvatarSheet(true)}>⚙</button>
       </header>
 
       {/* Day strip */}
@@ -354,6 +425,13 @@ export default function MobileApp() {
           member={evSheet.member}
           onClose={() => setEvSheet(null)}
           onDelete={deleteEvent}
+        />
+      )}
+      {avatarSheet && (
+        <MobileAvatarSheet
+          members={members}
+          onClose={() => setAvatarSheet(false)}
+          onReload={reloadMembers}
         />
       )}
     </div>
