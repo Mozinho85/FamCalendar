@@ -702,6 +702,22 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 }
 .btn-cancel:hover { background: var(--bg-hover); color: var(--text-1); }
 
+.btn-keyboard {
+  padding: 13px 22px;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  border: 1px solid var(--border-md);
+  color: var(--text-2);
+  font-size: 1.2rem;
+  touch-action: manipulation;
+}
+.btn-keyboard--on {
+  background: #e8ecff;
+  border-color: #4f6ef7;
+  color: #4f6ef7;
+}
+.btn-keyboard:hover { background: var(--bg-hover); }
+
 .btn-danger {
   padding: 13px 26px;
   border-radius: var(--r-sm);

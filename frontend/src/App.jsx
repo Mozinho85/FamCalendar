@@ -133,7 +133,15 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
   function focusField(field) {
     tap();
     setKbTarget(field);
-    setKbVisible(true);
+  }
+
+  function toggleKeyboard() {
+    if (kbVisible) {
+      setKbVisible(false);
+    } else {
+      if (!kbTarget) setKbTarget("title");
+      setKbVisible(true);
+    }
   }
 
   function kbChange(val) {
@@ -242,6 +250,11 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
           </div>
           <div className="modal__foot">
             <button className="btn-cancel" onClick={onClose}>Cancel</button>
+            <button
+              className={`btn-keyboard ${kbVisible ? "btn-keyboard--on" : ""}`}
+              onPointerDown={e => e.preventDefault()}
+              onClick={toggleKeyboard}
+            >⌨</button>
             <button className="btn-primary" onClick={save} disabled={saving || !title.trim()}>
               {saving ? "Saving…" : "Save"}
             </button>
