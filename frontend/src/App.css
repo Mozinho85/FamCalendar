@@ -787,6 +787,8 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+.badge-g {
   display: inline-flex; align-items: center; justify-content: center;
   width: 20px; height: 20px; border-radius: 4px;
   background: #4285f4; color: white;
