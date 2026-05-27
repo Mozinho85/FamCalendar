@@ -73,6 +73,9 @@ app.post('/api/update', (req, res) => {
     res.end();
   });
 });
+
+// Manual sync trigger
+app.post('/api/sync/now', async (req, res) => {
   try {
     const [gResults, iResults] = await Promise.all([syncAllMembers(), syncAllIcal()]);
     res.json({ success: true, google: gResults, ical: iResults });
