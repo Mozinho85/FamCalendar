@@ -29,6 +29,7 @@ function migrate() {
       google_refresh_token TEXT,
       google_calendar_ids  TEXT DEFAULT '[]',
       ical_urls            TEXT DEFAULT '[]',
+      avatar_url           TEXT,
       created_at  TEXT DEFAULT (datetime('now')),
       updated_at  TEXT DEFAULT (datetime('now'))
     );
@@ -78,6 +79,7 @@ function migrate() {
 
   // Migrate existing installs — add columns if they don't exist yet
   try { db.exec("ALTER TABLE family_members ADD COLUMN ical_urls TEXT DEFAULT '[]'"); } catch {}
+  try { db.exec("ALTER TABLE family_members ADD COLUMN avatar_url TEXT"); } catch {}
 
   // Seed default family members if table is empty
   const count = db.prepare('SELECT COUNT(*) as c FROM family_members').get();

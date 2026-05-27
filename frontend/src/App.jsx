@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import "./App.css";
 import TouchKeyboard from "./Keyboard.jsx";
 import { useFeedback } from "./useFeedback.js";
@@ -339,7 +339,53 @@ function IcalManager({ member, onReload }) {
   );
 }
 
-function SettingsModal({ members, onClose, onReload }) {
+function AvatarUpload({ member, onReload }) {
+  const fileRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+
+  async function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setBusy(true);
+    const form = new FormData();
+    form.append('avatar', file);
+    await fetch(`${API}/members/${member.id}/avatar`, { method: 'POST', body: form });
+    setBusy(false);
+    onReload();
+  }
+
+  async function handleRemove() {
+    await fetch(`${API}/members/${member.id}/avatar`, { method: 'DELETE' });
+    onReload();
+  }
+
+  return (
+    <div className="avatar-upload">
+      <div className="avatar-upload__preview" style={{ "--mc": member.color }}>
+        {member.avatar_url ? (
+          <img src={member.avatar_url} alt={member.name} className="avatar-upload__img" />
+        ) : (
+          <div className="avatar-upload__initial">{member.name[0]}</div>
+        )}
+      </div>
+      <div className="avatar-upload__btns">
+        <button className="btn-icon" onClick={() => fileRef.current.click()} disabled={busy}>
+          {busy ? "Uploading…" : "📷 Upload photo"}
+        </button>
+        {member.avatar_url && (
+          <button className="btn-icon btn-icon--danger" onClick={handleRemove}>✕ Remove</button>
+        )}
+      </div>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleFile}
+      />
+    </div>
+  );
+}
   const [editing, setEditing]     = useState(null);
   const [editName, setEditName]   = useState("");
   const [editColor, setEditColor] = useState(PALETTE[0]);
@@ -425,7 +471,9 @@ function SettingsModal({ members, onClose, onReload }) {
                   </div>
                   {expanded === m.id && (
                     <div className="s-expanded">
-                      <p className="s-section-label">iCal feeds</p>
+                      <p className="s-section-label">Photo</p>
+                      <AvatarUpload member={m} onReload={onReload} />
+                      <p className="s-section-label" style={{ marginTop: 12 }}>iCal feeds</p>
                       <IcalManager member={m} onReload={onReload} />
                       {m.google_connected ? (
                         <p className="s-note" style={{ marginTop: 8 }}>✓ Google Calendar connected</p>
@@ -593,7 +641,15 @@ export default function App() {
             return (
               <div key={m.id} className="cal__row">
                 <div className="cal__row-label" style={{ "--mc": m.color }}>
-                  <div className="cal__avatar">{m.name[0]}</div>
+                  {m.avatar_url ? (
+                    <img
+                      src={m.avatar_url}
+                      alt={m.name}
+                      className="cal__avatar cal__avatar--img"
+                    />
+                  ) : (
+                    <div className="cal__avatar">{m.name[0]}</div>
+                  )}
                   <span className="cal__member-name">{m.name}</span>
                 </div>
                 {days.map((day, di) => {
