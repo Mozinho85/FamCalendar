@@ -48,6 +48,7 @@ function migrate() {
       google_event_id TEXT,
       google_cal_id   TEXT,
       recurrence_rule TEXT,
+      important       INTEGER NOT NULL DEFAULT 0,
       created_at      TEXT DEFAULT (datetime('now')),
       updated_at      TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (member_id) REFERENCES family_members(id) ON DELETE SET NULL
@@ -80,6 +81,7 @@ function migrate() {
   // Migrate existing installs — add columns if they don't exist yet
   try { db.exec("ALTER TABLE family_members ADD COLUMN ical_urls TEXT DEFAULT '[]'"); } catch {}
   try { db.exec("ALTER TABLE family_members ADD COLUMN avatar_url TEXT"); } catch {}
+  try { db.exec("ALTER TABLE events ADD COLUMN important INTEGER NOT NULL DEFAULT 0"); } catch {}
 
   // Seed default family members if table is empty
   const count = db.prepare('SELECT COUNT(*) as c FROM family_members').get();

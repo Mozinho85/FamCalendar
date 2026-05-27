@@ -4,6 +4,7 @@ import TouchKeyboard from "./Keyboard.jsx";
 import { useFeedback } from "./useFeedback.js";
 import { useDimmer } from "./useDimmer.js";
 import { useDebounce } from "./useDebounce.js";
+import { useWeather } from "./useWeather.js";
 
 const API = "/api";
 
@@ -28,6 +29,20 @@ function LoadingScreen({ visible }) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+function isBirthday(event) {
+  return /birthday|bday|b-day/i.test(event.title);
+}
+
+function daysUntil(dateStr) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(dateStr); target.setHours(0,0,0,0);
+  return Math.round((target - today) / (1000 * 60 * 60 * 24));
+}
+
+function dateKey(date) {
+  return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+}
 
 function pad(n) { return String(n).padStart(2, "0"); }
 function formatTime(dt) { const d = new Date(dt); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
@@ -106,6 +121,7 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime]     = useState("10:00");
   const [location, setLocation]   = useState("");
+  const [important, setImportant] = useState(false);
   const [saving, setSaving]       = useState(false);
 
   // Keyboard state
@@ -135,7 +151,7 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
     const start = allDay ? `${dateStr}T00:00:00` : `${dateStr}T${startTime}:00`;
     const end   = allDay ? `${dateStr}T23:59:59` : `${dateStr}T${endTime}:00`;
     await onSave({ title: title.trim(), start_datetime: start, end_datetime: end,
-                   all_day: allDay, member_id: memberId, location });
+                   all_day: allDay, member_id: memberId, location, important });
     success();
     setSaving(false);
     onClose();
@@ -213,6 +229,13 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
                 {kbTarget === "location" && kbVisible && <span className="touch-input__cursor" />}
               </div>
             </div>
+
+            {/* Important */}
+            <label className="field field--inline">
+              <input type="checkbox" checked={important}
+                onChange={e => setImportant(e.target.checked)} />
+              <span>⭐ Mark as important (shows countdown)</span>
+            </label>
 
           </div>
           <div className="modal__foot">
@@ -386,6 +409,60 @@ function AvatarUpload({ member, onReload }) {
     </div>
   );
 }
+
+// ── Update Button ─────────────────────────────────────────────────────────────
+
+function UpdateButton() {
+  const [status, setStatus] = useState("idle"); // idle | running | done | error
+  const [log, setLog]       = useState("");
+
+  async function runUpdate() {
+    setStatus("running");
+    setLog("");
+    try {
+      const res = await fetch(`${API}/update`, { method: "POST" });
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        setLog(l => l + decoder.decode(value));
+      }
+      setStatus("done");
+    } catch (err) {
+      setLog(l => l + `\nError: ${err.message}`);
+      setStatus("error");
+    }
+  }
+
+  return (
+    <div className="update-btn-wrap">
+      {status === "idle" && (
+        <button className="btn-update" onClick={runUpdate}>↑ Check for updates</button>
+      )}
+      {status === "running" && (
+        <button className="btn-update btn-update--busy" disabled>Updating…</button>
+      )}
+      {status === "done" && (
+        <button className="btn-update btn-update--done" onClick={() => { setStatus("idle"); setLog(""); }}>
+          ✓ Updated — tap to dismiss
+        </button>
+      )}
+      {status === "error" && (
+        <button className="btn-update btn-update--error" onClick={() => { setStatus("idle"); setLog(""); }}>
+          ✕ Failed — tap to retry
+        </button>
+      )}
+      {log && (
+        <pre className="update-log">{log}</pre>
+      )}
+    </div>
+  );
+}
+
+// ── Settings Modal ────────────────────────────────────────────────────────────
+
+function SettingsModal({ members, onClose, onReload }) {
   const [editing, setEditing]     = useState(null);
   const [editName, setEditName]   = useState("");
   const [editColor, setEditColor] = useState(PALETTE[0]);
@@ -515,6 +592,7 @@ function AvatarUpload({ member, onReload }) {
           )}
         </div>
         <div className="modal__foot">
+          <UpdateButton />
           <button className="btn-primary" onClick={onClose}>Done</button>
         </div>
       </div>
@@ -546,11 +624,17 @@ export default function App() {
   function decreaseFontSize() { setFontSize(f => Math.max(f - 1, 12)); }
 
   const { tap, success, back } = useFeedback();
-  const dimmed = useDimmer();
+  const dimmed  = useDimmer();
+  const weather = useWeather();
 
   const { members, reload: reloadMembers } = useMembers();
   const { events,  reload: reloadEvents  } = useEvents(weekStart);
   const memberMap = Object.fromEntries(members.map(m => [m.id, m]));
+
+  // Today's events for the sidebar panel
+  const todayEvents = events
+    .filter(e => eventOnDay(e, today))
+    .sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime));
 
   const handlePrevWeek = useDebounce(useCallback(() => { tap(); setWeekStart(w => addDays(w, -7)); }, [tap]), 300);
   const handleNextWeek = useDebounce(useCallback(() => { tap(); setWeekStart(w => addDays(w,  7)); }, [tap]), 300);
@@ -617,76 +701,147 @@ export default function App() {
         </div>
       </header>
 
-      <div className="cal">
-        <div className="cal__head">
-          <div className="cal__corner" />
-          {days.map((day, i) => (
-            <div key={i} className={`cal__day-hdr ${isSameDay(day, today) ? "cal__day-hdr--today" : ""}`}>
-              <span className="cal__day-name">{DAY_NAMES[day.getDay()]}</span>
-              <span className="cal__day-num">{day.getDate()}</span>
-            </div>
-          ))}
+      <div className="main-area">
+        {/* ── Calendar ── */}
+        <div className="cal">
+          <div className="cal__head">
+            <div className="cal__corner" />
+            {days.map((day, i) => {
+              const dk = dateKey(day);
+              const w  = weather?.[dk];
+              const hasBirthday = events.some(e => eventOnDay(e, day) && isBirthday(e));
+              return (
+                <div key={i} className={`cal__day-hdr ${isSameDay(day, today) ? "cal__day-hdr--today" : ""}`}>
+                  {w && (
+                    <div className="cal__weather">
+                      <span className="cal__weather-icon">{w.icon}</span>
+                      <span className="cal__weather-temp">{w.max}°</span>
+                    </div>
+                  )}
+                  <div className="cal__day-hdr-main">
+                    <span className="cal__day-name">{DAY_NAMES[day.getDay()]}</span>
+                    <span className="cal__day-num">{day.getDate()}</span>
+                  </div>
+                  {hasBirthday && <span className="cal__birthday">🎂</span>}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="cal__body">
+            {members.length === 0 && (
+              <div className="cal__empty">
+                No family members yet —&nbsp;
+                <button onClick={() => setSettings(true)}>open Settings</button>
+                &nbsp;to add people.
+              </div>
+            )}
+            {members.map(m => {
+              const mEvents = events.filter(e => e.member_id === m.id);
+              return (
+                <div key={m.id} className="cal__row">
+                  <div className="cal__row-label" style={{ "--mc": m.color }}>
+                    {m.avatar_url ? (
+                      <img src={m.avatar_url} alt={m.name} className="cal__avatar cal__avatar--img" />
+                    ) : (
+                      <div className="cal__avatar">{m.name[0]}</div>
+                    )}
+                    <span className="cal__member-name">{m.name}</span>
+                  </div>
+                  {days.map((day, di) => {
+                    const dayEvs = mEvents.filter(e => eventOnDay(e, day));
+                    const isToday = isSameDay(day, today);
+                    return (
+                      <div
+                        key={di}
+                        className={`cal__cell ${isToday ? "cal__cell--today" : ""}`}
+                        onClick={() => handleCellTap(m, day)}
+                      >
+                        {dayEvs.map((ev, ei) => {
+                          const days_until = daysUntil(ev.start_datetime);
+                          return (
+                            <div
+                              key={ei}
+                              className={`ev ${ev.important ? "ev--important" : ""}`}
+                              style={{ "--mc": m.color }}
+                              onClick={e => { e.stopPropagation(); handleEventTap(ev, m); }}
+                            >
+                              <div className="ev__top">
+                                <span className="ev__title">{ev.title}</span>
+                                {ev.important && days_until > 0 && days_until <= 14 && (
+                                  <span className="ev__countdown">
+                                    {days_until === 1 ? "tomorrow" : `in ${days_until}d`}
+                                  </span>
+                                )}
+                                {ev.important && days_until === 0 && (
+                                  <span className="ev__countdown ev__countdown--today">today!</span>
+                                )}
+                              </div>
+                              <div className="ev__meta">
+                                {!ev.all_day && (
+                                  <span className="ev__time">
+                                    {formatTime(ev.start_datetime)}–{formatTime(ev.end_datetime)}
+                                  </span>
+                                )}
+                                {ev.source === "google" && <span className="ev__g">G</span>}
+                                {ev.source === "ical"   && <span className="ev__ical">iCal</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="cal__body">
-          {members.length === 0 && (
-            <div className="cal__empty">
-              No family members yet —&nbsp;
-              <button onClick={() => setSettings(true)}>open Settings</button>
-              &nbsp;to add people.
+        {/* ── Today panel ── */}
+        <aside className="today-panel">
+          <div className="today-panel__head">
+            <div className="today-panel__title">Today</div>
+            <div className="today-panel__date">
+              {today.getDate()} {MONTHS[today.getMonth()]}
             </div>
-          )}
-          {members.map(m => {
-            const mEvents = events.filter(e => e.member_id === m.id);
-            return (
-              <div key={m.id} className="cal__row">
-                <div className="cal__row-label" style={{ "--mc": m.color }}>
-                  {m.avatar_url ? (
-                    <img
-                      src={m.avatar_url}
-                      alt={m.name}
-                      className="cal__avatar cal__avatar--img"
-                    />
-                  ) : (
-                    <div className="cal__avatar">{m.name[0]}</div>
-                  )}
-                  <span className="cal__member-name">{m.name}</span>
-                </div>
-                {days.map((day, di) => {
-                  const dayEvs = mEvents.filter(e => eventOnDay(e, day));
-                  const isToday = isSameDay(day, today);
-                  return (
-                    <div
-                      key={di}
-                      className={`cal__cell ${isToday ? "cal__cell--today" : ""}`}
-                      onClick={() => handleCellTap(m, day)}
-                    >
-                      {dayEvs.map((ev, ei) => (
-                        <div
-                          key={ei}
-                          className="ev"
-                          style={{ "--mc": m.color }}
-                          onClick={e => { e.stopPropagation(); handleEventTap(ev, m); }}
-                        >
-                          <span className="ev__title">{ev.title}</span>
-                          <div className="ev__meta">
-                            {!ev.all_day && (
-                              <span className="ev__time">
-                                {formatTime(ev.start_datetime)}–{formatTime(ev.end_datetime)}
-                              </span>
-                            )}
-                            {ev.source === "google" && <span className="ev__g">G</span>}
-                            {ev.source === "ical"   && <span className="ev__ical">iCal</span>}
-                          </div>
-                        </div>
-                      ))}
+          </div>
+          <div className="today-panel__body">
+            {todayEvents.length === 0 && (
+              <p className="today-panel__empty">Nothing on today</p>
+            )}
+            {todayEvents.map(ev => {
+              const member = memberMap[ev.member_id];
+              const color  = ev.color || member?.color || "#4f6ef7";
+              return (
+                <div key={ev.id} className="today-ev" style={{ "--mc": color }}
+                  onClick={() => handleEventTap(ev, member)}>
+                  <div className="today-ev__bar" />
+                  <div className="today-ev__info">
+                    <div className="today-ev__title">{ev.title}</div>
+                    <div className="today-ev__meta">
+                      {ev.all_day
+                        ? <span>All day</span>
+                        : <span>{formatTime(ev.start_datetime)}–{formatTime(ev.end_datetime)}</span>
+                      }
+                      {member && <span>· {member.name}</span>}
                     </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
+                  </div>
+                  {member?.avatar_url ? (
+                    <img src={member.avatar_url} alt={member.name} className="today-ev__avatar" />
+                  ) : member ? (
+                    <div className="today-ev__initial" style={{ background: member.color }}>
+                      {member.name[0]}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+          <button className="today-panel__add" onClick={() => handleCellTap(members[0], today)}>
+            + Add today
+          </button>
+        </aside>
       </div>
 
       {addModal && (

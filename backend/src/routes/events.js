@@ -53,10 +53,11 @@ router.post('/',
   body('color').optional().isString(),
   body('location').optional().isString(),
   body('notes').optional().isString(),
+  body('important').optional().isBoolean(),
   validate,
   (req, res) => {
     const id = uuidv4();
-    const { title, start_datetime, end_datetime, member_id, all_day, color, location, notes } = req.body;
+    const { title, start_datetime, end_datetime, member_id, all_day, color, location, notes, important } = req.body;
 
     // Inherit color from member if not specified
     let eventColor = color;
@@ -66,9 +67,9 @@ router.post('/',
     }
 
     db.prepare(`
-      INSERT INTO events (id, title, start_datetime, end_datetime, all_day, member_id, color, location, notes, source)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'local')
-    `).run(id, title, start_datetime, end_datetime, all_day ? 1 : 0, member_id || null, eventColor || null, location || null, notes || null);
+      INSERT INTO events (id, title, start_datetime, end_datetime, all_day, member_id, color, location, notes, important, source)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'local')
+    `).run(id, title, start_datetime, end_datetime, all_day ? 1 : 0, member_id || null, eventColor || null, location || null, notes || null, important ? 1 : 0);
 
     const event = db.prepare('SELECT * FROM events WHERE id = ?').get(id);
     res.status(201).json(event);

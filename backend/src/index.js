@@ -50,8 +50,29 @@ app.get('/api/sync/status', (req, res) => {
   res.json(status);
 });
 
-// Manual sync trigger (useful from phone UI)
-app.post('/api/sync/now', async (req, res) => {
+// Manual update trigger — runs the update script and streams progress
+app.post('/api/update', (req, res) => {
+  const { exec } = require('child_process');
+  const scriptPath = path.join(__dirname, '../../scripts/update.sh');
+
+  res.setHeader('Content-Type', 'text/plain');
+  res.setHeader('Transfer-Encoding', 'chunked');
+
+  // Force an update by temporarily clearing the local hash check
+  // by running the script with FORCE=1
+  const child = exec(`FORCE=1 bash ${scriptPath} 2>&1`);
+
+  child.stdout.on('data', data => res.write(data));
+  child.stderr.on('data', data => res.write(data));
+  child.on('close', code => {
+    res.write(`\nUpdate script exited with code ${code}\n`);
+    res.end();
+  });
+  child.on('error', err => {
+    res.write(`Error: ${err.message}\n`);
+    res.end();
+  });
+});
   try {
     const [gResults, iResults] = await Promise.all([syncAllMembers(), syncAllIcal()]);
     res.json({ success: true, google: gResults, ical: iResults });
