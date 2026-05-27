@@ -415,12 +415,13 @@ function AvatarUpload({ member, onReload }) {
 // ── Update Button ─────────────────────────────────────────────────────────────
 
 function UpdateButton() {
-  const [status, setStatus] = useState("idle"); // idle | running | done | error
+  const [status, setStatus] = useState("idle"); // idle | running | restarting | done | error
   const [log, setLog]       = useState("");
 
   async function runUpdate() {
     setStatus("running");
     setLog("");
+    let accumulated = "";
     try {
       const res = await fetch(`${API}/update`, { method: "POST" });
       const reader = res.body.getReader();
@@ -428,11 +429,20 @@ function UpdateButton() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        setLog(l => l + decoder.decode(value));
+        const chunk = decoder.decode(value);
+        accumulated += chunk;
+        setLog(l => l + chunk);
       }
+    } catch {
+      // Stream interrupted — expected when backend restarts itself
+    }
+
+    if (accumulated.includes("Restarting backend")) {
+      setStatus("restarting");
+      setTimeout(() => window.location.reload(), 7000);
+    } else if (accumulated.includes("Update complete") || accumulated.includes("Already up to date")) {
       setStatus("done");
-    } catch (err) {
-      setLog(l => l + `\nError: ${err.message}`);
+    } else {
       setStatus("error");
     }
   }
@@ -444,6 +454,9 @@ function UpdateButton() {
       )}
       {status === "running" && (
         <button className="btn-update btn-update--busy" disabled>Updating…</button>
+      )}
+      {status === "restarting" && (
+        <button className="btn-update btn-update--busy" disabled>Restarting… reloading shortly</button>
       )}
       {status === "done" && (
         <button className="btn-update btn-update--done" onClick={() => { setStatus("idle"); setLog(""); }}>
