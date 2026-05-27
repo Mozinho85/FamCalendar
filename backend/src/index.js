@@ -123,6 +123,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: Math.floor(process.uptime()), timestamp: new Date().toISOString() });
 });
 
+// Serve avatars from data/avatars/ — separate from public/ so builds don't wipe them
+app.use('/avatars', express.static(path.join(__dirname, '../data/avatars')));
+
 // Serve the phone web UI as static files (built React app goes in /public)
 app.use(express.static(path.join(__dirname, '../public')));
 

@@ -8,8 +8,8 @@ const db = require('../db/database');
 
 const router = express.Router();
 
-// Avatar storage — save to public/avatars/ so they're served statically
-const AVATAR_DIR = path.join(__dirname, '../../public/avatars');
+// Avatar storage — data/avatars/ is outside public/ so builds don't wipe it
+const AVATAR_DIR = path.join(__dirname, '../../data/avatars');
 fs.mkdirSync(AVATAR_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
