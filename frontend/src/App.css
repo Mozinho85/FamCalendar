@@ -406,45 +406,74 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 }
 .cal__row:last-child { border-bottom: none; }
 
-/* Family / Events shared row — sits between header and user rows, compact */
-.cal__row.cal__row--family {
-  flex: none;                          /* wins over .cal__row { flex:1 } via 2-class specificity */
+/* ── Events strip — hardcoded row above member rows, not a member ── */
+.cal__events-strip {
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
   border-bottom: 2px solid var(--border-md);
   background: rgba(99, 102, 241, 0.03);
 }
-.cal__row.cal__row--family .cal__row-label {
-  background: rgba(99, 102, 241, 0.07);
-  border-right-color: rgba(99, 102, 241, 0.2);
-  padding: 0 8px;
-  min-height: 0;
-}
-.cal__row.cal__row--family .cal__cell {
-  padding: 2px 3px;
-  gap: 2px;
-  min-height: 28px;
-}
-.cal__row.cal__row--family .cal__span-layer {
-  min-height: 24px;
-  padding: 2px;
-}
-/* Compact event pills in the Events row */
-.cal__row.cal__row--family .ev {
-  padding: 2px 5px;
-  gap: 1px;
-}
-.cal__row.cal__row--family .ev__title {
-  font-size: 0.6875rem;
-}
-.cal__row.cal__row--family .ev__meta {
-  display: none;
-}
-.cal__family-label {
+
+.cal__events-strip__label {
+  width: var(--label-w);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-right: 1px solid rgba(99, 102, 241, 0.25);
+  background: rgba(99, 102, 241, 0.08);
   font-size: 0.625rem;
   font-weight: 700;
   color: #6366f1;
   text-transform: uppercase;
   letter-spacing: 1.2px;
 }
+
+.cal__events-strip__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cal__events-strip__spans {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  padding: 2px;
+  flex-shrink: 0;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.cal__events-strip__cells {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.cal__events-strip__cell {
+  padding: 2px 3px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  touch-action: manipulation;
+  min-height: 0;
+}
+.cal__events-strip__cell:last-child { border-right: none; }
+.cal__events-strip__cell:hover { background: var(--bg-hover); }
+.cal__events-strip__cell--today { background: rgba(79, 110, 247, 0.05); }
+
+/* Compact event pills inside the strip */
+.cal__events-strip__cell .ev {
+  padding: 1px 5px;
+  gap: 0;
+  border-left-width: 2px;
+}
+.cal__events-strip__cell .ev__title { font-size: 0.6875rem; }
+.cal__events-strip__cell .ev__top   { gap: 2px; }
 
 .cal__row-label {
   display: flex;

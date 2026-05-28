@@ -134,15 +134,18 @@ const PALETTE = ["#e05a8a","#2db88a","#f09030","#3a9fe0","#8b6fde","#e06030","#1
 // ── Hooks ─────────────────────────────────────────────────────────────────────
 
 function useMembers() {
-  const [members, setMembers] = useState([]);
+  const [members, setMembers]           = useState([]);
+  const [sharedMember, setSharedMember] = useState(null);
   const load = useCallback(async () => {
     try {
       const r = await fetch(`${API}/members`);
-      setMembers(await r.json()); // backend guarantees shared member is first
+      const data = await r.json();
+      setSharedMember(data.find(m => m.is_shared) ?? null);
+      setMembers(data.filter(m => !m.is_shared));
     } catch {}
   }, []);
   useEffect(() => { load(); }, [load]);
-  return { members, reload: load };
+  return { members, sharedMember, reload: load };
 }
 
 function useEvents(weekStart) {
@@ -980,10 +983,18 @@ export default function App() {
     tempUnit: settings.tempUnit,
   });
 
-  const { members, reload: reloadMembers } = useMembers();
+  const { members, sharedMember, reload: reloadMembers } = useMembers();
   const { events,  reload: reloadEvents  } = useEvents(weekStart);
   const countdownEvents                    = useUpcomingImportant();
-  const memberMap = Object.fromEntries(members.map(m => [m.id, m]));
+
+  // memberMap covers both regular members and the shared Events member
+  const memberMap = Object.fromEntries(
+    [...members, ...(sharedMember ? [sharedMember] : [])].map(m => [m.id, m])
+  );
+
+  // Shared / holiday events for the Events strip
+  const sharedEvs     = sharedMember ? events.filter(e => e.member_id === sharedMember.id) : [];
+  const sharedSpanEvs = sharedEvs.filter(e => isMultiDayAllDay(e));
 
   // Today's events for the sidebar panel
   const todayEvents = events
@@ -1130,7 +1141,61 @@ export default function App() {
           </div>
 
           <div className="cal__body">
-            {members.filter(m => !m.is_shared).length === 0 && (
+            {/* ── Events strip — hardcoded row above all member rows ── */}
+            <div className="cal__events-strip">
+              <div className="cal__events-strip__label">Events</div>
+              <div className="cal__events-strip__body">
+                {sharedSpanEvs.length > 0 && (
+                  <div className="cal__events-strip__spans">
+                    {sharedSpanEvs.map(ev => {
+                      const span = getEventSpan(ev, days);
+                      if (!span) return null;
+                      const { startCol, endCol, startsBeforeWeek, endsAfterWeek } = span;
+                      return (
+                        <div key={ev.id}
+                          className={["ev ev--span", startsBeforeWeek ? "ev--span-clipped-s" : "", endsAfterWeek ? "ev--span-clipped-e" : ""].filter(Boolean).join(" ")}
+                          style={{ "--mc": "#6366f1", gridColumn: `${startCol} / ${endCol}` }}
+                          onClick={e => { e.stopPropagation(); handleEventTap(ev, sharedMember); }}
+                        >
+                          {startsBeforeWeek && <span className="ev__span-arrow">◀</span>}
+                          <span className="ev__title">{ev.title}</span>
+                          {endsAfterWeek && <span className="ev__span-arrow">▶</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <div className="cal__events-strip__cells">
+                  {days.map((day, di) => {
+                    const dayEvs = sharedEvs.filter(e => eventOnDay(e, day));
+                    const isToday = isSameDay(day, today);
+                    return (
+                      <div key={di}
+                        className={`cal__events-strip__cell ${isToday ? "cal__events-strip__cell--today" : ""}`}
+                        onClick={() => sharedMember && handleCellTap(sharedMember, day)}
+                      >
+                        {dayEvs.map(ev => (
+                          <div key={ev.id}
+                            className={`ev ev--shared ${ev.important ? "ev--important" : ""}`}
+                            style={{ "--mc": "#6366f1" }}
+                            onClick={e => { e.stopPropagation(); handleEventTap(ev, sharedMember); }}
+                          >
+                            <div className="ev__top">
+                              <span className="ev__title">{ev.title}</span>
+                              {ev.important && daysUntil(ev.start_datetime) === 0 && (
+                                <span className="ev__countdown ev__countdown--today">today!</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {members.length === 0 && (
               <div className="cal__empty">
                 No family members yet —&nbsp;
                 <button onClick={() => setShowSettings(true)}>open Settings</button>
@@ -1138,20 +1203,17 @@ export default function App() {
               </div>
             )}
             {members.map(m => {
-              const isFamily   = m.is_shared;
-              const mEvents    = events.filter(e => e.member_id === m.id);
+              const mEvents     = events.filter(e => e.member_id === m.id);
               const spanningEvs = mEvents.filter(e => isMultiDayAllDay(e));
               return (
-                <div key={m.id} className={`cal__row ${isFamily ? "cal__row--family" : ""}`}>
+                <div key={m.id} className="cal__row">
                   <div className="cal__row-label" style={{ "--mc": m.color }}>
-                    {isFamily ? (
-                      <span className="cal__family-label">Events</span>
-                    ) : m.avatar_url ? (
+                    {m.avatar_url ? (
                       <img src={m.avatar_url} alt={m.name} className="cal__avatar cal__avatar--img" />
                     ) : (
                       <div className="cal__avatar">{m.name[0]}</div>
                     )}
-                    {!isFamily && <span className="cal__member-name">{m.name}</span>}
+                    <span className="cal__member-name">{m.name}</span>
                   </div>
 
                   <div className="cal__row-right">
@@ -1305,7 +1367,8 @@ export default function App() {
         />
       )}
       {addModal && (
-        <AddEventModal date={addModal.date} member={addModal.member} members={members}
+        <AddEventModal date={addModal.date} member={addModal.member}
+          members={[...(sharedMember ? [sharedMember] : []), ...members]}
           onClose={() => setAddModal(null)} onSave={saveEvent} />
       )}
       {evModal && (
