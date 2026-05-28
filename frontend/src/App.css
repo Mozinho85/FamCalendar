@@ -377,8 +377,8 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 
 /* Member row — fills available height equally */
 .cal__row {
-  display: grid;
-  grid-template-columns: var(--label-w) repeat(7, 1fr);
+  display: flex;
+  flex-direction: row;
   flex: 1;
   min-height: 0;
   border-bottom: 1px solid var(--border);
@@ -392,9 +392,39 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   justify-content: center;
   gap: 8px;
   padding: 12px 8px;
+  width: var(--label-w);
+  flex-shrink: 0;
   border-right: 1px solid var(--border);
   background: var(--bg-surface);
+}
+
+.cal__row-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Spanning all-day event layer */
+.cal__span-layer {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  padding: 3px 2px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  align-items: center;
+  min-height: 30px;
+}
+
+/* Regular day cells row */
+.cal__cells-row {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  min-height: 0;
 }
 
 .cal__avatar {
@@ -457,6 +487,32 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   /* transition removed for Pi performance */
   flex-shrink: 0;
 }
+
+/* Spanning all-day event bar */
+.ev--span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--mc);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  margin: 0 2px;
+  align-self: center;
+}
+.ev--span:hover { filter: brightness(1.08); }
+.ev--span-clipped-s { border-radius: 0 6px 6px 0; margin-left: 0; padding-left: 5px; }
+.ev--span-clipped-e { border-radius: 6px 0 0 6px; margin-right: 0; padding-right: 5px; }
+.ev--span .ev__title  { color: white; font-size: 0.75rem; }
+.ev__span-arrow { font-size: 0.6rem; opacity: 0.85; flex-shrink: 0; }
 
 .ev--important {
   border-left-width: 4px;

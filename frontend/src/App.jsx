@@ -63,11 +63,65 @@ function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
-function eventOnDay(ev, day) {
+
+// For all-day events Google/iCal use exclusive end (midnight next day).
+// Normalise to the last inclusive day for display.
+function displayEndDate(ev) {
+  const end = new Date(ev.end_datetime);
+  if (ev.all_day && end.getHours() === 0 && end.getMinutes() === 0 && end.getSeconds() === 0) {
+    return addDays(end, -1);
+  }
+  return end;
+}
+
+function isMultiDayAllDay(ev) {
+  if (!ev.all_day) return false;
   const start = new Date(ev.start_datetime);
-  const end   = new Date(ev.end_datetime);
-  const dayEnd = new Date(day); dayEnd.setHours(23,59,59,999);
-  return start <= dayEnd && end >= new Date(day);
+  return !isSameDay(start, displayEndDate(ev));
+}
+
+function eventOnDay(ev, day) {
+  if (!ev.all_day) {
+    // Timed events: only on start day, even if they run past midnight
+    return isSameDay(new Date(ev.start_datetime), day);
+  }
+  if (isMultiDayAllDay(ev)) {
+    return false; // rendered separately in the spanning layer
+  }
+  return isSameDay(new Date(ev.start_datetime), day);
+}
+
+// Returns { startCol, endCol, startsBeforeWeek, endsAfterWeek } for spanning events.
+// Columns are 1-based; endCol is exclusive (for CSS grid-column).
+function getEventSpan(ev, days) {
+  const s = new Date(ev.start_datetime); s.setHours(0, 0, 0, 0);
+  const e = displayEndDate(ev);          e.setHours(0, 0, 0, 0);
+
+  const wFirst = new Date(days[0]); wFirst.setHours(0, 0, 0, 0);
+  const wLast  = new Date(days[6]); wLast.setHours(0, 0, 0, 0);
+
+  if (e < wFirst || s > wLast) return null;
+
+  const startsBeforeWeek = s < wFirst;
+  const endsAfterWeek    = e > wLast;
+
+  let startCol = 1;
+  if (!startsBeforeWeek) {
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(days[i]); d.setHours(0, 0, 0, 0);
+      if (+d === +s) { startCol = i + 1; break; }
+    }
+  }
+
+  let endCol = 8;
+  if (!endsAfterWeek) {
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(days[i]); d.setHours(0, 0, 0, 0);
+      if (+d === +e) { endCol = i + 2; break; }
+    }
+  }
+
+  return { startCol, endCol, startsBeforeWeek, endsAfterWeek };
 }
 
 const MONTHS = ["January","February","March","April","May","June",
@@ -936,7 +990,8 @@ export default function App() {
               </div>
             )}
             {members.map(m => {
-              const mEvents = events.filter(e => e.member_id === m.id);
+              const mEvents    = events.filter(e => e.member_id === m.id);
+              const spanningEvs = mEvents.filter(e => isMultiDayAllDay(e));
               return (
                 <div key={m.id} className="cal__row">
                   <div className="cal__row-label" style={{ "--mc": m.color }}>
@@ -947,50 +1002,83 @@ export default function App() {
                     )}
                     <span className="cal__member-name">{m.name}</span>
                   </div>
-                  {days.map((day, di) => {
-                    const dayEvs = mEvents.filter(e => eventOnDay(e, day));
-                    const isToday = isSameDay(day, today);
-                    return (
-                      <div
-                        key={di}
-                        className={`cal__cell ${isToday ? "cal__cell--today" : ""}`}
-                        onClick={() => handleCellTap(m, day)}
-                      >
-                        {dayEvs.map((ev, ei) => {
-                          const days_until = daysUntil(ev.start_datetime);
+
+                  <div className="cal__row-right">
+                    {/* ── Spanning all-day events ── */}
+                    {spanningEvs.length > 0 && (
+                      <div className="cal__span-layer">
+                        {spanningEvs.map(ev => {
+                          const span = getEventSpan(ev, days);
+                          if (!span) return null;
+                          const { startCol, endCol, startsBeforeWeek, endsAfterWeek } = span;
                           return (
                             <div
-                              key={ei}
-                              className={`ev ${ev.important ? "ev--important" : ""}`}
-                              style={{ "--mc": m.color }}
+                              key={ev.id}
+                              className={[
+                                "ev ev--span",
+                                startsBeforeWeek ? "ev--span-clipped-s" : "",
+                                endsAfterWeek    ? "ev--span-clipped-e" : "",
+                              ].filter(Boolean).join(" ")}
+                              style={{ "--mc": m.color, gridColumn: `${startCol} / ${endCol}` }}
                               onClick={e => { e.stopPropagation(); handleEventTap(ev, m); }}
                             >
-                              <div className="ev__top">
-                                <span className="ev__title">{ev.title}</span>
-                                {ev.important && days_until > 0 && days_until <= 14 && (
-                                  <span className="ev__countdown">
-                                    {days_until === 1 ? "tomorrow" : `in ${days_until}d`}
-                                  </span>
-                                )}
-                                {ev.important && days_until === 0 && (
-                                  <span className="ev__countdown ev__countdown--today">today!</span>
-                                )}
-                              </div>
-                              <div className="ev__meta">
-                                {!ev.all_day && (
-                                  <span className="ev__time">
-                                    {formatTime(ev.start_datetime)}–{formatTime(ev.end_datetime)}
-                                  </span>
-                                )}
-                                {ev.source === "google" && <span className="ev__g">G</span>}
-                                {ev.source === "ical"   && <span className="ev__ical">iCal</span>}
-                              </div>
+                              {startsBeforeWeek && <span className="ev__span-arrow">◀</span>}
+                              <span className="ev__title">{ev.title}</span>
+                              {endsAfterWeek && <span className="ev__span-arrow">▶</span>}
                             </div>
                           );
                         })}
                       </div>
-                    );
-                  })}
+                    )}
+
+                    {/* ── Day cells ── */}
+                    <div className="cal__cells-row">
+                      {days.map((day, di) => {
+                        const dayEvs = mEvents.filter(e => eventOnDay(e, day));
+                        const isToday = isSameDay(day, today);
+                        return (
+                          <div
+                            key={di}
+                            className={`cal__cell ${isToday ? "cal__cell--today" : ""}`}
+                            onClick={() => handleCellTap(m, day)}
+                          >
+                            {dayEvs.map((ev, ei) => {
+                              const days_until = daysUntil(ev.start_datetime);
+                              return (
+                                <div
+                                  key={ei}
+                                  className={`ev ${ev.important ? "ev--important" : ""}`}
+                                  style={{ "--mc": m.color }}
+                                  onClick={e => { e.stopPropagation(); handleEventTap(ev, m); }}
+                                >
+                                  <div className="ev__top">
+                                    <span className="ev__title">{ev.title}</span>
+                                    {ev.important && days_until > 0 && days_until <= 14 && (
+                                      <span className="ev__countdown">
+                                        {days_until === 1 ? "tomorrow" : `in ${days_until}d`}
+                                      </span>
+                                    )}
+                                    {ev.important && days_until === 0 && (
+                                      <span className="ev__countdown ev__countdown--today">today!</span>
+                                    )}
+                                  </div>
+                                  <div className="ev__meta">
+                                    {!ev.all_day && (
+                                      <span className="ev__time">
+                                        {formatTime(ev.start_datetime)}–{formatTime(ev.end_datetime)}
+                                      </span>
+                                    )}
+                                    {ev.source === "google" && <span className="ev__g">G</span>}
+                                    {ev.source === "ical"   && <span className="ev__ical">iCal</span>}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               );
             })}
