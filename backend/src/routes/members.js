@@ -29,6 +29,8 @@ const upload = multer({
   },
 });
 
+const { SHARED_MEMBER_ID } = require('../services/sharedEvents');
+
 function validate(req, res, next) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
@@ -38,6 +40,7 @@ function validate(req, res, next) {
 function formatMember(m) {
   return {
     ...m,
+    is_shared: m.id === SHARED_MEMBER_ID,
     google_calendar_ids: JSON.parse(m.google_calendar_ids || '[]'),
     ical_urls: JSON.parse(m.ical_urls || '[]'),
     avatar_url: m.avatar_url || null,
@@ -47,11 +50,13 @@ function formatMember(m) {
   };
 }
 
-// GET /api/members
+// GET /api/members — shared member always first, then by insertion order
 router.get('/', (req, res) => {
-  const members = db.prepare(
-    'SELECT id, name, color, google_calendar_ids, ical_urls, avatar_url FROM family_members ORDER BY rowid'
-  ).all();
+  const members = db.prepare(`
+    SELECT id, name, color, google_calendar_ids, ical_urls, avatar_url
+    FROM family_members
+    ORDER BY CASE WHEN id = ? THEN 0 ELSE 1 END, rowid
+  `).all(SHARED_MEMBER_ID);
   res.json(members.map(formatMember));
 });
 

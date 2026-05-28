@@ -137,12 +137,7 @@ function useMembers() {
   const load = useCallback(async () => {
     try {
       const r = await fetch(`${API}/members`);
-      const data = await r.json();
-      // Family shared row always first
-      setMembers([
-        ...data.filter(m => m.id === SHARED_MEMBER_ID),
-        ...data.filter(m => m.id !== SHARED_MEMBER_ID),
-      ]);
+      setMembers(await r.json()); // backend guarantees shared member is first
     } catch {}
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -197,7 +192,7 @@ function AddEventModal({ date, member, members, onClose, onSave, existingEvent }
 
   const [title, setTitle]         = useState(ev?.title ?? "");
   const [memberId, setMemberId]   = useState(
-    ev?.member_id ?? member?.id ?? members.find(m => m.id !== SHARED_MEMBER_ID)?.id ?? members[0]?.id ?? ""
+    ev?.member_id ?? member?.id ?? members.find(m => !m.is_shared)?.id ?? members[0]?.id ?? ""
   );
   const [allDay, setAllDay]       = useState(ev ? !!ev.all_day : true);
   const [dateStr, setDateStr]     = useState(initDateStr);
@@ -754,7 +749,7 @@ function SettingsModal({ members, onClose, onReload, settings, onSettingsChange 
           <button className="modal__close" onClick={onClose}>✕</button>
         </div>
         <div className="modal__body">
-          {members.filter(m => m.id !== SHARED_MEMBER_ID).map(m => (
+          {members.filter(m => !m.is_shared).map(m => (
             <div key={m.id} className="s-member">
               {editing === m.id ? (
                 <>
@@ -1117,7 +1112,7 @@ export default function App() {
           </div>
 
           <div className="cal__body">
-            {members.filter(m => m.id !== SHARED_MEMBER_ID).length === 0 && (
+            {members.filter(m => !m.is_shared).length === 0 && (
               <div className="cal__empty">
                 No family members yet —&nbsp;
                 <button onClick={() => setShowSettings(true)}>open Settings</button>
@@ -1125,7 +1120,7 @@ export default function App() {
               </div>
             )}
             {members.map(m => {
-              const isFamily   = m.id === SHARED_MEMBER_ID;
+              const isFamily   = m.is_shared;
               const mEvents    = events.filter(e => e.member_id === m.id);
               const spanningEvs = mEvents.filter(e => isMultiDayAllDay(e));
               return (
