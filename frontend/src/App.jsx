@@ -686,7 +686,7 @@ function RebootButton() {
   if (status === "confirm") {
     return (
       <div className="reboot-confirm">
-        <span className="reboot-confirm__label">Reboot Pi?</span>
+        <span className="reboot-confirm__label">Reboot?</span>
         <button className="btn-danger" onClick={async () => {
           setStatus("rebooting");
           await fetch(`${API}/reboot`, { method: "POST" }).catch(() => {});
@@ -695,7 +695,7 @@ function RebootButton() {
       </div>
     );
   }
-  return <button className="btn-reboot" onClick={() => setStatus("confirm")}>↺ Reboot Pi</button>;
+  return <button className="btn-reboot" onClick={() => setStatus("confirm")}>↺ Reboot</button>;
 }
 
 // ── Settings Modal ────────────────────────────────────────────────────────────
