@@ -7,8 +7,6 @@ const multer = require('multer');
 const db = require('../db/database');
 
 const router = express.Router();
-
-// Avatar storage — data/avatars/ is outside public/ so builds don't wipe it
 const AVATAR_DIR = path.join(__dirname, '../../data/avatars');
 fs.mkdirSync(AVATAR_DIR, { recursive: true });
 
@@ -29,7 +27,6 @@ const upload = multer({
   },
 });
 
-const { SHARED_MEMBER_ID } = require('../services/sharedEvents');
 
 function validate(req, res, next) {
   const errors = validationResult(req);
@@ -40,7 +37,6 @@ function validate(req, res, next) {
 function formatMember(m) {
   return {
     ...m,
-    is_shared: m.id === SHARED_MEMBER_ID,
     google_calendar_ids: JSON.parse(m.google_calendar_ids || '[]'),
     ical_urls: JSON.parse(m.ical_urls || '[]'),
     avatar_url: m.avatar_url || null,
@@ -50,13 +46,13 @@ function formatMember(m) {
   };
 }
 
-// GET /api/members — shared member always first, then by insertion order
+// GET /api/members
 router.get('/', (req, res) => {
   const members = db.prepare(`
     SELECT id, name, color, google_calendar_ids, ical_urls, avatar_url
     FROM family_members
-    ORDER BY CASE WHEN id = ? THEN 0 ELSE 1 END, rowid
-  `).all(SHARED_MEMBER_ID);
+    ORDER BY rowid
+  `).all();
   res.json(members.map(formatMember));
 });
 

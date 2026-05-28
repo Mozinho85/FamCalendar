@@ -10,7 +10,6 @@ import { useSettings } from "./useSettings.js";
 import AmbientMode from "./AmbientMode.jsx";
 
 const API = "/api";
-const SHARED_MEMBER_ID = "family-shared-events";
 
 // ── Loading screen ────────────────────────────────────────────────────────────
 
@@ -134,18 +133,15 @@ const PALETTE = ["#e05a8a","#2db88a","#f09030","#3a9fe0","#8b6fde","#e06030","#1
 // ── Hooks ─────────────────────────────────────────────────────────────────────
 
 function useMembers() {
-  const [members, setMembers]           = useState([]);
-  const [sharedMember, setSharedMember] = useState(null);
+  const [members, setMembers] = useState([]);
   const load = useCallback(async () => {
     try {
       const r = await fetch(`${API}/members`);
-      const data = await r.json();
-      setSharedMember(data.find(m => m.is_shared) ?? null);
-      setMembers(data.filter(m => !m.is_shared));
+      setMembers(await r.json());
     } catch {}
   }, []);
   useEffect(() => { load(); }, [load]);
-  return { members, sharedMember, reload: load };
+  return { members, reload: load };
 }
 
 function useEvents(weekStart) {
@@ -983,18 +979,11 @@ export default function App() {
     tempUnit: settings.tempUnit,
   });
 
-  const { members, sharedMember, reload: reloadMembers } = useMembers();
+  const { members, reload: reloadMembers } = useMembers();
   const { events,  reload: reloadEvents  } = useEvents(weekStart);
   const countdownEvents                    = useUpcomingImportant();
 
-  // memberMap covers both regular members and the shared Events member
-  const memberMap = Object.fromEntries(
-    [...members, ...(sharedMember ? [sharedMember] : [])].map(m => [m.id, m])
-  );
-
-  // Shared / holiday events for the Events strip
-  const sharedEvs     = sharedMember ? events.filter(e => e.member_id === sharedMember.id) : [];
-  const sharedSpanEvs = sharedEvs.filter(e => isMultiDayAllDay(e));
+  const memberMap = Object.fromEntries(members.map(m => [m.id, m]));
 
   // Today's events for the sidebar panel
   const todayEvents = events
@@ -1141,60 +1130,6 @@ export default function App() {
           </div>
 
           <div className="cal__body">
-            {/* ── Events strip — hardcoded row above all member rows ── */}
-            <div className="cal__events-strip">
-              <div className="cal__events-strip__label">Events</div>
-              <div className="cal__events-strip__body">
-                {sharedSpanEvs.length > 0 && (
-                  <div className="cal__events-strip__spans">
-                    {sharedSpanEvs.map(ev => {
-                      const span = getEventSpan(ev, days);
-                      if (!span) return null;
-                      const { startCol, endCol, startsBeforeWeek, endsAfterWeek } = span;
-                      return (
-                        <div key={ev.id}
-                          className={["ev ev--span", startsBeforeWeek ? "ev--span-clipped-s" : "", endsAfterWeek ? "ev--span-clipped-e" : ""].filter(Boolean).join(" ")}
-                          style={{ "--mc": "#6366f1", gridColumn: `${startCol} / ${endCol}` }}
-                          onClick={e => { e.stopPropagation(); handleEventTap(ev, sharedMember); }}
-                        >
-                          {startsBeforeWeek && <span className="ev__span-arrow">◀</span>}
-                          <span className="ev__title">{ev.title}</span>
-                          {endsAfterWeek && <span className="ev__span-arrow">▶</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                <div className="cal__events-strip__cells">
-                  {days.map((day, di) => {
-                    const dayEvs = sharedEvs.filter(e => eventOnDay(e, day));
-                    const isToday = isSameDay(day, today);
-                    return (
-                      <div key={di}
-                        className={`cal__events-strip__cell ${isToday ? "cal__events-strip__cell--today" : ""}`}
-                        onClick={() => sharedMember && handleCellTap(sharedMember, day)}
-                      >
-                        {dayEvs.map(ev => (
-                          <div key={ev.id}
-                            className={`ev ev--shared ${ev.important ? "ev--important" : ""}`}
-                            style={{ "--mc": "#6366f1" }}
-                            onClick={e => { e.stopPropagation(); handleEventTap(ev, sharedMember); }}
-                          >
-                            <div className="ev__top">
-                              <span className="ev__title">{ev.title}</span>
-                              {ev.important && daysUntil(ev.start_datetime) === 0 && (
-                                <span className="ev__countdown ev__countdown--today">today!</span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
             {members.length === 0 && (
               <div className="cal__empty">
                 No family members yet —&nbsp;
@@ -1368,7 +1303,7 @@ export default function App() {
       )}
       {addModal && (
         <AddEventModal date={addModal.date} member={addModal.member}
-          members={[...(sharedMember ? [sharedMember] : []), ...members]}
+          members={members}
           onClose={() => setAddModal(null)} onSave={saveEvent} />
       )}
       {evModal && (
