@@ -635,25 +635,25 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   border: 1px solid var(--border-md);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-md);
-  padding: 14px 16px 12px;
+  padding: 20px 24px 18px;
   z-index: 401;
-  min-width: 300px;
+  min-width: 460px;
 }
 
 .dp__head {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-bottom: 10px;
+  gap: 6px;
+  margin-bottom: 16px;
 }
 
 .dp__nav {
-  width: 36px; height: 36px;
+  width: 52px; height: 52px;
   border-radius: var(--r-sm);
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--text-2);
-  font-size: 1rem;
+  font-size: 1.25rem;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
   touch-action: manipulation;
@@ -663,7 +663,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 .dp__title {
   flex: 1;
   text-align: center;
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 600;
   color: var(--text-1);
 }
@@ -671,16 +671,16 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 .dp__grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
+  gap: 5px;
 }
 
 .dp__dh {
   text-align: center;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-3);
   text-transform: uppercase;
-  padding: 2px 0 6px;
+  padding: 4px 0 8px;
   letter-spacing: 0.5px;
 }
 
@@ -690,7 +690,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   align-items: center;
   justify-content: center;
   border-radius: var(--r-sm);
-  font-size: 0.9375rem;
+  font-size: 1.125rem;
   font-weight: 400;
   color: var(--text-1);
   touch-action: manipulation;
@@ -714,18 +714,18 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 }
 
 .dp__foot {
-  margin-top: 10px;
+  margin-top: 14px;
   display: flex;
   justify-content: center;
 }
 
 .dp__today-btn {
-  padding: 8px 28px;
+  padding: 14px 40px;
   border-radius: var(--r-sm);
   background: var(--accent-light);
   border: 1px solid #c7d0fb;
   color: var(--accent);
-  font-size: 0.9375rem;
+  font-size: 1.0625rem;
   font-weight: 500;
   touch-action: manipulation;
 }
