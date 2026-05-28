@@ -230,7 +230,7 @@ function AddEventModal({ date, member, members, onClose, onSave, existingEvent }
     if (!title.trim()) return;
     setSaving(true);
     const start = allDay ? `${dateStr}T00:00:00` : `${dateStr}T${startTime}:00`;
-    const end   = allDay ? `${endDateStr}T23:59:59` : `${dateStr}T${endTime}:00`;
+    const end   = allDay ? `${endDateStr}T23:59:59` : `${endDateStr}T${endTime}:00`;
     await onSave({ title: title.trim(), start_datetime: start, end_datetime: end,
                    all_day: allDay, member_id: memberId, location, important });
     success();
@@ -284,8 +284,7 @@ function AddEventModal({ date, member, members, onClose, onSave, existingEvent }
             <label className="field"><span>End date</span>
               <input type="date" value={endDateStr} min={dateStr}
                 onChange={e => setEndDateStr(e.target.value)}
-                onFocus={() => setKbVisible(false)}
-                disabled={!allDay} />
+                onFocus={() => setKbVisible(false)} />
             </label>
 
             {/* All day toggle */}
