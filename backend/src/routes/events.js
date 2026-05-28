@@ -87,6 +87,16 @@ router.put('/:id',
     if (!event) return res.status(404).json({ error: 'Event not found' });
     if (event.source === 'google') return res.status(400).json({ error: 'Google events must be edited in Google Calendar' });
 
+    // Holiday events: only the important flag can be changed
+    if (event.source === 'holiday') {
+      if (req.body.important === undefined) {
+        return res.status(400).json({ error: 'Holiday events can only have their important flag toggled' });
+      }
+      db.prepare("UPDATE events SET important = ?, updated_at = datetime('now') WHERE id = ?")
+        .run(req.body.important ? 1 : 0, req.params.id);
+      return res.json(db.prepare('SELECT * FROM events WHERE id = ?').get(req.params.id));
+    }
+
     const fields = ['title', 'start_datetime', 'end_datetime', 'all_day', 'member_id', 'color', 'location', 'notes', 'important'];
     const updates = [];
     const values = [];
@@ -112,7 +122,8 @@ router.put('/:id',
 router.delete('/:id', (req, res) => {
   const event = db.prepare('SELECT * FROM events WHERE id = ?').get(req.params.id);
   if (!event) return res.status(404).json({ error: 'Event not found' });
-  if (event.source === 'google') return res.status(400).json({ error: 'Google events must be deleted in Google Calendar' });
+  if (event.source === 'google')  return res.status(400).json({ error: 'Google events must be deleted in Google Calendar' });
+  if (event.source === 'holiday') return res.status(400).json({ error: 'Holiday events cannot be deleted' });
 
   db.prepare('DELETE FROM events WHERE id = ?').run(req.params.id);
   res.json({ deleted: true });

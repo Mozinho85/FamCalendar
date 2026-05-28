@@ -9,6 +9,7 @@ import { useSettings } from "./useSettings.js";
 import AmbientMode from "./AmbientMode.jsx";
 
 const API = "/api";
+const SHARED_MEMBER_ID = "family-shared-events";
 
 // ── Loading screen ────────────────────────────────────────────────────────────
 
@@ -134,7 +135,15 @@ const PALETTE = ["#e05a8a","#2db88a","#f09030","#3a9fe0","#8b6fde","#e06030","#1
 function useMembers() {
   const [members, setMembers] = useState([]);
   const load = useCallback(async () => {
-    try { const r = await fetch(`${API}/members`); setMembers(await r.json()); } catch {}
+    try {
+      const r = await fetch(`${API}/members`);
+      const data = await r.json();
+      // Family shared row always first
+      setMembers([
+        ...data.filter(m => m.id === SHARED_MEMBER_ID),
+        ...data.filter(m => m.id !== SHARED_MEMBER_ID),
+      ]);
+    } catch {}
   }, []);
   useEffect(() => { load(); }, [load]);
   return { members, reload: load };
@@ -187,7 +196,9 @@ function AddEventModal({ date, member, members, onClose, onSave, existingEvent }
   }
 
   const [title, setTitle]         = useState(ev?.title ?? "");
-  const [memberId, setMemberId]   = useState(ev?.member_id ?? member?.id ?? members[0]?.id ?? "");
+  const [memberId, setMemberId]   = useState(
+    ev?.member_id ?? member?.id ?? members.find(m => m.id !== SHARED_MEMBER_ID)?.id ?? members[0]?.id ?? ""
+  );
   const [allDay, setAllDay]       = useState(ev ? !!ev.all_day : true);
   const [dateStr, setDateStr]     = useState(initDateStr);
   const [endDateStr, setEndDateStr] = useState(initEndDateStr);
@@ -356,10 +367,11 @@ function AddEventModal({ date, member, members, onClose, onSave, existingEvent }
 
 // ── Event Detail Modal ────────────────────────────────────────────────────────
 
-function EventModal({ event, member, onClose, onDelete, onEdit }) {
+function EventModal({ event, member, onClose, onDelete, onEdit, onToggleImportant }) {
   const start = new Date(event.start_datetime);
   const end   = new Date(event.end_datetime);
   const isMultiDay = event.all_day && !isSameDay(start, displayEndDate(event));
+  const isHoliday  = event.source === "holiday";
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
@@ -385,6 +397,9 @@ function EventModal({ event, member, onClose, onDelete, onEdit }) {
           {event.source === "google" && (
             <p className="ev-google-note">From Google Calendar — edit it there to make changes.</p>
           )}
+          {isHoliday && (
+            <p className="ev-google-note">Bank holiday / shared event — tap Important to add countdown.</p>
+          )}
         </div>
         <div className="modal__foot">
           {event.source === "local" && (
@@ -393,6 +408,12 @@ function EventModal({ event, member, onClose, onDelete, onEdit }) {
           {event.source === "local" && (
             <button className="btn-secondary" onClick={onEdit}>Edit</button>
           )}
+          <button
+            className={`btn-secondary ${event.important ? "btn-important--on" : ""}`}
+            onClick={onToggleImportant}
+          >
+            {event.important ? "⭐ Important" : "☆ Important"}
+          </button>
           <button className="btn-primary" onClick={onClose}>Close</button>
         </div>
       </div>
@@ -400,9 +421,75 @@ function EventModal({ event, member, onClose, onDelete, onEdit }) {
   );
 }
 
-// ── Settings Modal ────────────────────────────────────────────────────────────
+// ── Date Picker Popup ─────────────────────────────────────────────────────────
 
-function IcalManager({ member, onReload }) {
+const DAY_HDR = ["Mo","Tu","We","Th","Fr","Sa","Su"];
+
+function DatePickerPopup({ weekStart, today, onSelect, onClose }) {
+  const [viewYear,  setViewYear]  = useState(weekStart.getFullYear());
+  const [viewMonth, setViewMonth] = useState(weekStart.getMonth());
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+    else setViewMonth(m => m - 1);
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+    else setViewMonth(m => m + 1);
+  }
+
+  const firstOfMonth = new Date(viewYear, viewMonth, 1);
+  const lastOfMonth  = new Date(viewYear, viewMonth + 1, 0);
+  const startDow     = (firstOfMonth.getDay() + 6) % 7; // 0 = Mon
+
+  const cells = [];
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  for (let d = 1; d <= lastOfMonth.getDate(); d++) cells.push(new Date(viewYear, viewMonth, d));
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const wStart = new Date(weekStart); wStart.setHours(0,0,0,0);
+  const wEnd   = addDays(wStart, 6);
+
+  return (
+    <div className="dp-overlay" onClick={onClose}>
+      <div className="dp" onClick={e => e.stopPropagation()}>
+        <div className="dp__head">
+          <button className="dp__nav" onClick={() => setViewYear(y => y - 1)}>«</button>
+          <button className="dp__nav" onClick={prevMonth}>‹</button>
+          <span className="dp__title">{MONTHS[viewMonth]} {viewYear}</span>
+          <button className="dp__nav" onClick={nextMonth}>›</button>
+          <button className="dp__nav" onClick={() => setViewYear(y => y + 1)}>»</button>
+        </div>
+        <div className="dp__grid">
+          {DAY_HDR.map(d => <div key={d} className="dp__dh">{d}</div>)}
+          {cells.map((date, i) => {
+            if (!date) return <div key={i} className="dp__cell dp__cell--empty" />;
+            const d = new Date(date); d.setHours(0,0,0,0);
+            const isToday = isSameDay(date, today);
+            const inWeek  = d >= wStart && d <= wEnd;
+            return (
+              <div key={i}
+                className={[
+                  "dp__cell",
+                  isToday ? "dp__cell--today"    : "",
+                  inWeek  ? "dp__cell--selected" : "",
+                ].filter(Boolean).join(" ")}
+                onClick={() => onSelect(date)}
+              >
+                {date.getDate()}
+              </div>
+            );
+          })}
+        </div>
+        <div className="dp__foot">
+          <button className="dp__today-btn" onClick={() => onSelect(today)}>Today</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Settings Modal (IcalManager / AvatarUpload / UpdateButton) ────────────────({ member, onReload }) {
   const [urls, setUrls]     = useState(member.ical_urls || []);
   const [newUrl, setNewUrl] = useState("");
   const [busy, setBusy]     = useState(false);
@@ -667,7 +754,7 @@ function SettingsModal({ members, onClose, onReload, settings, onSettingsChange 
           <button className="modal__close" onClick={onClose}>✕</button>
         </div>
         <div className="modal__body">
-          {members.map(m => (
+          {members.filter(m => m.id !== SHARED_MEMBER_ID).map(m => (
             <div key={m.id} className="s-member">
               {editing === m.id ? (
                 <>
@@ -871,6 +958,7 @@ export default function App() {
   const [evModal, setEvModal]     = useState(null);
   const [editModal, setEditModal] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading]     = useState(true);
   const [fontSize, setFontSize]   = useState(() => {
     return parseInt(localStorage.getItem("famcal-fontsize") || "16", 10);
@@ -985,7 +1073,10 @@ export default function App() {
         </div>
         <div className="topbar__nav">
           <button className="nav-btn" onClick={handlePrevWeek}>‹</button>
-          <span className="week-label">{weekLabel}</span>
+          <button className="week-label" onClick={() => setShowDatePicker(p => !p)}>
+            {weekLabel}
+            <span className="week-label__chevron">{showDatePicker ? "▴" : "▾"}</span>
+          </button>
           <button className="nav-btn" onClick={handleNextWeek}>›</button>
           {!isThisWeek && (
             <button className="today-btn" onClick={handleToday}>Today</button>
@@ -1026,7 +1117,7 @@ export default function App() {
           </div>
 
           <div className="cal__body">
-            {members.length === 0 && (
+            {members.filter(m => m.id !== SHARED_MEMBER_ID).length === 0 && (
               <div className="cal__empty">
                 No family members yet —&nbsp;
                 <button onClick={() => setShowSettings(true)}>open Settings</button>
@@ -1034,12 +1125,15 @@ export default function App() {
               </div>
             )}
             {members.map(m => {
+              const isFamily   = m.id === SHARED_MEMBER_ID;
               const mEvents    = events.filter(e => e.member_id === m.id);
               const spanningEvs = mEvents.filter(e => isMultiDayAllDay(e));
               return (
-                <div key={m.id} className="cal__row">
+                <div key={m.id} className={`cal__row ${isFamily ? "cal__row--family" : ""}`}>
                   <div className="cal__row-label" style={{ "--mc": m.color }}>
-                    {m.avatar_url ? (
+                    {isFamily ? (
+                      <div className="cal__avatar cal__avatar--family">📅</div>
+                    ) : m.avatar_url ? (
                       <img src={m.avatar_url} alt={m.name} className="cal__avatar cal__avatar--img" />
                     ) : (
                       <div className="cal__avatar">{m.name[0]}</div>
@@ -1114,6 +1208,7 @@ export default function App() {
                                     )}
                                     {ev.source === "google" && <span className="ev__g">G</span>}
                                     {ev.source === "ical"   && <span className="ev__ical">iCal</span>}
+                                    {ev.source === "holiday" && <span className="ev__holiday">🏖</span>}
                                   </div>
                                 </div>
                               );
@@ -1188,6 +1283,14 @@ export default function App() {
         </div>
       </div>
 
+      {showDatePicker && (
+        <DatePickerPopup
+          weekStart={weekStart}
+          today={today}
+          onSelect={date => { setWeekStart(startOfWeek(date)); setShowDatePicker(false); tap(); }}
+          onClose={() => setShowDatePicker(false)}
+        />
+      )}
       {addModal && (
         <AddEventModal date={addModal.date} member={addModal.member} members={members}
           onClose={() => setAddModal(null)} onSave={saveEvent} />
@@ -1195,7 +1298,11 @@ export default function App() {
       {evModal && (
         <EventModal event={evModal.event} member={memberMap[evModal.event.member_id]}
           onClose={() => setEvModal(null)} onDelete={deleteEvent}
-          onEdit={() => { setEditModal(evModal.event); setEvModal(null); }} />
+          onEdit={() => { setEditModal(evModal.event); setEvModal(null); }}
+          onToggleImportant={() => {
+            updateEvent(evModal.event.id, { important: evModal.event.important ? 0 : 1 });
+            setEvModal(null);
+          }} />
       )}
       {editModal && (
         <AddEventModal existingEvent={editModal} member={memberMap[editModal.member_id]}

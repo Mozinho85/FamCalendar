@@ -204,6 +204,21 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   color: var(--text-1);
   min-width: 260px;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  touch-action: manipulation;
+}
+.week-label:hover { background: var(--bg-hover); border-color: var(--border); }
+
+.week-label__chevron {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  line-height: 1;
 }
 
 .nav-btn {
@@ -385,6 +400,15 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 }
 .cal__row:last-child { border-bottom: none; }
 
+/* Family shared row — subtle tint to distinguish it */
+.cal__row--family {
+  background: rgba(99, 102, 241, 0.03);
+}
+.cal__row--family .cal__row-label {
+  background: rgba(99, 102, 241, 0.07);
+  border-right-color: rgba(99, 102, 241, 0.2);
+}
+
 .cal__row-label {
   display: flex;
   flex-direction: column;
@@ -441,6 +465,13 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 
 .cal__avatar--img {
   object-fit: cover;
+}
+
+.cal__avatar--family {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.3);
+  font-size: 3rem;
+  color: #6366f1;
 }
 
 .cal__member-name {
@@ -592,6 +623,123 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   border-radius: 3px;
   flex-shrink: 0;
 }
+
+.ev__holiday {
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* ── Date Picker Popup ─────────────────────────────────────────────── */
+.dp-overlay {
+  position: fixed; inset: 0;
+  z-index: 400;
+}
+
+.dp {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  padding: 14px 16px 12px;
+  z-index: 401;
+  min-width: 300px;
+}
+
+.dp__head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.dp__nav {
+  width: 36px; height: 36px;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  touch-action: manipulation;
+}
+.dp__nav:hover { background: var(--bg-hover); color: var(--text-1); }
+
+.dp__title {
+  flex: 1;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.dp__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.dp__dh {
+  text-align: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  padding: 2px 0 6px;
+  letter-spacing: 0.5px;
+}
+
+.dp__cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: var(--text-1);
+  touch-action: manipulation;
+}
+.dp__cell:not(.dp__cell--empty):hover { background: var(--bg-hover); }
+
+.dp__cell--empty { pointer-events: none; }
+
+.dp__cell--today {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--accent-light);
+}
+
+.dp__cell--selected {
+  background: color-mix(in srgb, var(--accent) 15%, white);
+}
+
+.dp__cell--today.dp__cell--selected {
+  background: color-mix(in srgb, var(--accent) 22%, white);
+}
+
+.dp__foot {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.dp__today-btn {
+  padding: 8px 28px;
+  border-radius: var(--r-sm);
+  background: var(--accent-light);
+  border: 1px solid #c7d0fb;
+  color: var(--accent);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  touch-action: manipulation;
+}
+.dp__today-btn:hover { background: #e0e5fd; }
 
 /* ── Modals ────────────────────────────────────────────────────────── */
 .overlay {
@@ -801,6 +949,13 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   touch-action: manipulation;
 }
 .btn-secondary:hover { background: var(--accent-light); }
+
+.btn-important--on {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #92400e;
+}
+.btn-important--on:hover { background: #fde68a; }
 
 /* ── Settings ──────────────────────────────────────────────────────── */
 .s-member {

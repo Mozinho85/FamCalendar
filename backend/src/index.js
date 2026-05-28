@@ -9,6 +9,7 @@ const membersRouter = require('./routes/members');
 const authRouter    = require('./routes/auth');
 const { syncAllMembers } = require('./services/googleSync');
 const { syncAllIcal }   = require('./services/icalSync');
+const { syncSharedEvents, ensureSharedMember } = require('./services/sharedEvents');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -31,6 +32,9 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+// Ensure the Family shared row exists immediately (before any async syncs)
+ensureSharedMember();
 
 // API routes
 app.use('/api/events',  eventsRouter);
@@ -155,7 +159,7 @@ cron.schedule(cronExpression, async () => {
 
 // Also run a sync on startup after a short delay
 setTimeout(() => {
-  Promise.all([syncAllMembers(), syncAllIcal()])
+  Promise.all([syncAllMembers(), syncAllIcal(), syncSharedEvents()])
     .then(([g, i]) => (g.length || i.length) && console.log('Initial sync complete'))
     .catch(err => console.error('Initial sync failed:', err.message));
 }, 5000);
