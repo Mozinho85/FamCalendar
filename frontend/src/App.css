@@ -491,6 +491,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 /* Spanning all-day event bar */
 .ev--span {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 5px;
   height: 24px;
