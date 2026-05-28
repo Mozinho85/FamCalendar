@@ -43,6 +43,12 @@ html, body, #root {
   -webkit-touch-callout: none;
 }
 
+/* Show cursor briefly after mouse movement; hidden again after 5 s idle */
+body.cursor-active * { cursor: auto !important; }
+body.cursor-active button,
+body.cursor-active [role="button"],
+body.cursor-active a { cursor: pointer !important; }
+
 button { font-family: var(--font); cursor: pointer; border: none; background: none; color: inherit; }
 
 /* ── Dim overlay ───────────────────────────────────────────────────── */

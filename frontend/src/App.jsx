@@ -3,6 +3,7 @@ import "./App.css";
 import TouchKeyboard from "./Keyboard.jsx";
 import { useFeedback } from "./useFeedback.js";
 import { useDimmer } from "./useDimmer.js";
+import { useCursorHide } from "./useCursorHide.js";
 import { useDebounce } from "./useDebounce.js";
 import { useWeather } from "./useWeather.js";
 import { useSettings } from "./useSettings.js";
@@ -971,6 +972,7 @@ export default function App() {
   const { tap, success, back } = useFeedback();
   const { settings, update: updateSettings } = useSettings();
   const { dimmed, waking, activate: activateAmbient } = useDimmer(settings.ambientIdleMinutes * 60 * 1000);
+  useCursorHide();
   const { daily: weather, current: currentWeather, hourly: hourlyWeather } = useWeather({
     lat:      settings.locationLat,
     lon:      settings.locationLon,
@@ -995,21 +997,37 @@ export default function App() {
   const handleEventTap = useDebounce(useCallback((ev, member) => { if (waking) return; tap(); setEvModal({ event: ev, member }); }, [tap, waking]), 600);
 
   // Swipe gestures
+  // 1 finger left/right → change week; 2 fingers down → ambient mode
   const touchStartRef = useRef(null);
   function onTouchStart(e) {
-    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, wasAmbient: dimmed };
+    const t = e.touches;
+    if (t.length === 1) {
+      touchStartRef.current = { fingers: 1, x: t[0].clientX, y: t[0].clientY, wasAmbient: dimmed };
+    } else if (t.length === 2) {
+      touchStartRef.current = {
+        fingers: 2,
+        x: (t[0].clientX + t[1].clientX) / 2,
+        y: (t[0].clientY + t[1].clientY) / 2,
+        wasAmbient: dimmed,
+      };
+    } else {
+      touchStartRef.current = null;
+    }
   }
   function onTouchEnd(e) {
-    if (!touchStartRef.current) return;
-    const { x: x0, y: y0, wasAmbient } = touchStartRef.current;
+    if (!touchStartRef.current || e.touches.length > 0) return;
+    const { fingers, x: x0, y: y0, wasAmbient } = touchStartRef.current;
     touchStartRef.current = null;
     if (wasAmbient || waking) return;
-    const dx = e.changedTouches[0].clientX - x0;
-    const dy = e.changedTouches[0].clientY - y0;
+    const ct = e.changedTouches;
+    const x1 = Array.from(ct).reduce((s, t) => s + t.clientX, 0) / ct.length;
+    const y1 = Array.from(ct).reduce((s, t) => s + t.clientY, 0) / ct.length;
+    const dx = x1 - x0;
+    const dy = y1 - y0;
     const THRESHOLD = 60;
-    if (Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > THRESHOLD) {
+    if (fingers === 1 && Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > THRESHOLD) {
       dx < 0 ? handleNextWeek() : handlePrevWeek();
-    } else if (dy > THRESHOLD && dy > Math.abs(dx) * 1.5) {
+    } else if (fingers === 2 && dy > THRESHOLD && dy > Math.abs(dx) * 1.5) {
       activateAmbient();
     }
   }
