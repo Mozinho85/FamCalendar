@@ -484,7 +484,9 @@ function DatePickerPopup({ weekStart, today, onSelect, onClose }) {
   );
 }
 
-// ── Settings Modal (IcalManager / AvatarUpload / UpdateButton) ────────────────({ member, onReload }) {
+// ── IcalManager / AvatarUpload / UpdateButton ────────────────────────────────
+
+function IcalManager({ member, onReload }) {
   const [urls, setUrls]     = useState(member.ical_urls || []);
   const [newUrl, setNewUrl] = useState("");
   const [busy, setBusy]     = useState(false);

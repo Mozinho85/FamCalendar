@@ -37,6 +37,7 @@ if [ "$LOCAL" = "$REMOTE" ] && [ "${FORCE:-0}" = "1" ]; then
   echo "Already up to date, but running forced reinstall..."
 else
   echo "Update found ($LOCAL -> $REMOTE), pulling..."
+  git stash 2>&1 || true
   if ! git pull origin main 2>&1; then
     echo "ERROR: git pull failed"
     exit 1
