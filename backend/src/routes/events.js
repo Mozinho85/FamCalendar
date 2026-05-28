@@ -87,7 +87,7 @@ router.put('/:id',
     if (!event) return res.status(404).json({ error: 'Event not found' });
     if (event.source === 'google') return res.status(400).json({ error: 'Google events must be edited in Google Calendar' });
 
-    const fields = ['title', 'start_datetime', 'end_datetime', 'all_day', 'member_id', 'color', 'location', 'notes'];
+    const fields = ['title', 'start_datetime', 'end_datetime', 'all_day', 'member_id', 'color', 'location', 'notes', 'important'];
     const updates = [];
     const values = [];
 

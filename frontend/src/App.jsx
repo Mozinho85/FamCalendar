@@ -166,18 +166,35 @@ function useClock() {
 
 // ── Add Event Modal ───────────────────────────────────────────────────────────
 
-function AddEventModal({ date, member, members, onClose, onSave }) {
+function AddEventModal({ date, member, members, onClose, onSave, existingEvent }) {
+  const ev = existingEvent;
   const { tap, success, back } = useFeedback();
-  const [title, setTitle]         = useState("");
-  const [memberId, setMemberId]   = useState(member?.id || members[0]?.id || "");
-  const [allDay, setAllDay]       = useState(true);
-  const [dateStr, setDateStr]     = useState(
-    date ? `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}` : ""
-  );
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime]     = useState("10:00");
-  const [location, setLocation]   = useState("");
-  const [important, setImportant] = useState(false);
+
+  function initDateStr() {
+    if (ev) return ev.start_datetime.slice(0, 10);
+    return date ? `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}` : "";
+  }
+  function initEndDateStr() {
+    if (ev) {
+      const end = new Date(ev.end_datetime);
+      if (ev.all_day && end.getHours() === 0 && end.getMinutes() === 0 && end.getSeconds() === 0) {
+        const d = addDays(end, -1);
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      }
+      return ev.end_datetime.slice(0, 10);
+    }
+    return initDateStr();
+  }
+
+  const [title, setTitle]         = useState(ev?.title ?? "");
+  const [memberId, setMemberId]   = useState(ev?.member_id ?? member?.id ?? members[0]?.id ?? "");
+  const [allDay, setAllDay]       = useState(ev ? !!ev.all_day : true);
+  const [dateStr, setDateStr]     = useState(initDateStr);
+  const [endDateStr, setEndDateStr] = useState(initEndDateStr);
+  const [startTime, setStartTime] = useState(() => ev && !ev.all_day ? ev.start_datetime.slice(11, 16) : "09:00");
+  const [endTime, setEndTime]     = useState(() => ev && !ev.all_day ? ev.end_datetime.slice(11, 16)   : "10:00");
+  const [location, setLocation]   = useState(ev?.location ?? "");
+  const [important, setImportant] = useState(ev ? !!ev.important : false);
   const [saving, setSaving]       = useState(false);
 
   // Keyboard state
@@ -213,7 +230,7 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
     if (!title.trim()) return;
     setSaving(true);
     const start = allDay ? `${dateStr}T00:00:00` : `${dateStr}T${startTime}:00`;
-    const end   = allDay ? `${dateStr}T23:59:59` : `${dateStr}T${endTime}:00`;
+    const end   = allDay ? `${endDateStr}T23:59:59` : `${dateStr}T${endTime}:00`;
     await onSave({ title: title.trim(), start_datetime: start, end_datetime: end,
                    all_day: allDay, member_id: memberId, location, important });
     success();
@@ -227,7 +244,7 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
         <div className={`modal modal--add-event ${kbVisible ? "modal--kb-open" : ""}`}
           onClick={e => e.stopPropagation()}>
           <div className="modal__head">
-            <h2>Add event</h2>
+            <h2>{ev ? "Edit event" : "Add event"}</h2>
             <button className="modal__close" onClick={onClose}>✕</button>
           </div>
           <div className="modal__body modal__body--add-event">
@@ -253,10 +270,22 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
             </label>
 
             {/* Date */}
-            <label className="field"><span>Date</span>
+            <label className="field"><span>Start date</span>
               <input type="date" value={dateStr}
-                onChange={e => setDateStr(e.target.value)}
+                onChange={e => {
+                  const v = e.target.value;
+                  if (v > endDateStr) setEndDateStr(v);
+                  setDateStr(v);
+                }}
                 onFocus={() => setKbVisible(false)} />
+            </label>
+
+            {/* End date — always visible; for timed events it locks to start date */}
+            <label className="field"><span>End date</span>
+              <input type="date" value={endDateStr} min={dateStr}
+                onChange={e => setEndDateStr(e.target.value)}
+                onFocus={() => setKbVisible(false)}
+                disabled={!allDay} />
             </label>
 
             {/* All day toggle */}
@@ -310,7 +339,7 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
               onClick={toggleKeyboard}
             >⌨</button>
             <button className="btn-primary" onClick={save} disabled={saving || !title.trim()}>
-              {saving ? "Saving…" : "Save"}
+              {saving ? "Saving…" : ev ? "Save changes" : "Save"}
             </button>
           </div>
         </div>
@@ -328,8 +357,10 @@ function AddEventModal({ date, member, members, onClose, onSave }) {
 
 // ── Event Detail Modal ────────────────────────────────────────────────────────
 
-function EventModal({ event, member, onClose, onDelete }) {
+function EventModal({ event, member, onClose, onDelete, onEdit }) {
   const start = new Date(event.start_datetime);
+  const end   = new Date(event.end_datetime);
+  const isMultiDay = event.all_day && !isSameDay(start, displayEndDate(event));
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
@@ -340,7 +371,9 @@ function EventModal({ event, member, onClose, onDelete }) {
         <div className="modal__body">
           {[
             ["Who",      member?.name],
-            ["Date",     `${start.getDate()} ${MONTHS[start.getMonth()]} ${start.getFullYear()}`],
+            isMultiDay
+              ? ["Dates", `${start.getDate()} ${MONTHS[start.getMonth()]} – ${end.getDate()} ${MONTHS[end.getMonth()]} ${end.getFullYear()}`]
+              : ["Date",  `${start.getDate()} ${MONTHS[start.getMonth()]} ${start.getFullYear()}`],
             !event.all_day && ["Time", `${formatTime(event.start_datetime)} – ${formatTime(event.end_datetime)}`],
             event.location && ["Location", event.location],
             event.notes    && ["Notes",    event.notes],
@@ -357,6 +390,9 @@ function EventModal({ event, member, onClose, onDelete }) {
         <div className="modal__foot">
           {event.source === "local" && (
             <button className="btn-danger" onClick={() => onDelete(event.id)}>Delete</button>
+          )}
+          {event.source === "local" && (
+            <button className="btn-secondary" onClick={onEdit}>Edit</button>
           )}
           <button className="btn-primary" onClick={onClose}>Close</button>
         </div>
@@ -834,6 +870,7 @@ export default function App() {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(today));
   const [addModal, setAddModal]   = useState(null);
   const [evModal, setEvModal]     = useState(null);
+  const [editModal, setEditModal] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [loading, setLoading]     = useState(true);
   const [fontSize, setFontSize]   = useState(() => {
@@ -920,6 +957,14 @@ export default function App() {
   async function saveEvent(data) {
     await fetch(`${API}/events`, {
       method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    reloadEvents();
+  }
+
+  async function updateEvent(id, data) {
+    await fetch(`${API}/events/${id}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     reloadEvents();
@@ -1150,7 +1195,13 @@ export default function App() {
       )}
       {evModal && (
         <EventModal event={evModal.event} member={memberMap[evModal.event.member_id]}
-          onClose={() => setEvModal(null)} onDelete={deleteEvent} />
+          onClose={() => setEvModal(null)} onDelete={deleteEvent}
+          onEdit={() => { setEditModal(evModal.event); setEvModal(null); }} />
+      )}
+      {editModal && (
+        <AddEventModal existingEvent={editModal} member={memberMap[editModal.member_id]}
+          members={members} onClose={() => setEditModal(null)}
+          onSave={data => updateEvent(editModal.id, data)} />
       )}
       {showSettings && (
         <SettingsModal members={members} settings={settings} onSettingsChange={updateSettings}

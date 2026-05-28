@@ -636,6 +636,10 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   padding: 18px 20px;
   font-size: 1.125rem;
 }
+.modal--add-event .field input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
 /* Larger footer buttons in add-event modal */
 .modal--add-event .modal__foot .btn-primary,
@@ -786,6 +790,17 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   /* transition removed for Pi performance */
 }
 .btn-danger:hover { background: #fee2e2; }
+
+.btn-secondary {
+  padding: 13px 26px;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 1.0rem;
+  touch-action: manipulation;
+}
+.btn-secondary:hover { background: var(--accent-light); }
 
 /* ── Settings ──────────────────────────────────────────────────────── */
 .s-member {
