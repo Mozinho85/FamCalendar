@@ -1132,13 +1132,13 @@ export default function App() {
                 <div key={m.id} className={`cal__row ${isFamily ? "cal__row--family" : ""}`}>
                   <div className="cal__row-label" style={{ "--mc": m.color }}>
                     {isFamily ? (
-                      <div className="cal__avatar cal__avatar--family">📅</div>
+                      <span className="cal__family-label">Events</span>
                     ) : m.avatar_url ? (
                       <img src={m.avatar_url} alt={m.name} className="cal__avatar cal__avatar--img" />
                     ) : (
                       <div className="cal__avatar">{m.name[0]}</div>
                     )}
-                    <span className="cal__member-name">{m.name}</span>
+                    {!isFamily && <span className="cal__member-name">{m.name}</span>}
                   </div>
 
                   <div className="cal__row-right">

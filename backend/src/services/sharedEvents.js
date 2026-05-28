@@ -8,8 +8,11 @@ const SHARED_COLOR = '#6366f1';
 function ensureSharedMember() {
   db.prepare(`
     INSERT OR IGNORE INTO family_members (id, name, color)
-    VALUES (?, 'Family', ?)
+    VALUES (?, 'Events', ?)
   `).run(SHARED_MEMBER_ID, SHARED_COLOR);
+  // Rename for existing installs that had the old 'Family' label
+  db.prepare(`UPDATE family_members SET name = 'Events' WHERE id = ? AND name = 'Family'`)
+    .run(SHARED_MEMBER_ID);
 }
 
 // Meeus/Jones/Butcher algorithm
