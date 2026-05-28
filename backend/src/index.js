@@ -125,6 +125,12 @@ app.post('/api/sync/now', async (req, res) => {
   }
 });
 
+// Reboot the Pi
+app.post('/api/reboot', (req, res) => {
+  res.json({ rebooting: true });
+  setTimeout(() => require('child_process').exec('sudo reboot'), 500);
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: Math.floor(process.uptime()), timestamp: new Date().toISOString() });

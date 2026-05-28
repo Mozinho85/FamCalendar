@@ -1125,6 +1125,33 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 .btn-update--done  { background: #f0fdf4; border-color: #86efac; color: #166534; }
 .btn-update--error { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
 
+.btn-reboot {
+  padding: 10px 18px;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  border: 1px solid var(--border-md);
+  color: var(--text-2);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: var(--font);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.btn-reboot:hover { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+.btn-reboot--busy { opacity: 0.6; cursor: not-allowed; }
+
+.reboot-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.reboot-confirm__label {
+  font-size: 0.875rem;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
 .update-log {
   font-family: var(--mono);
   font-size: 0.625rem;

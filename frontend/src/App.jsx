@@ -673,6 +673,29 @@ function UpdateButton() {
   );
 }
 
+// ── Reboot Button ─────────────────────────────────────────────────────────────
+
+function RebootButton() {
+  const [status, setStatus] = useState("idle"); // idle | confirm | rebooting
+
+  if (status === "rebooting") {
+    return <button className="btn-reboot btn-reboot--busy" disabled>Rebooting…</button>;
+  }
+  if (status === "confirm") {
+    return (
+      <div className="reboot-confirm">
+        <span className="reboot-confirm__label">Reboot Pi?</span>
+        <button className="btn-danger" onClick={async () => {
+          setStatus("rebooting");
+          await fetch(`${API}/reboot`, { method: "POST" }).catch(() => {});
+        }}>Yes, reboot</button>
+        <button className="btn-cancel" onClick={() => setStatus("idle")}>Cancel</button>
+      </div>
+    );
+  }
+  return <button className="btn-reboot" onClick={() => setStatus("confirm")}>↺ Reboot Pi</button>;
+}
+
 // ── Settings Modal ────────────────────────────────────────────────────────────
 
 function SettingsModal({ members, onClose, onReload, settings, onSettingsChange }) {
@@ -892,6 +915,7 @@ function SettingsModal({ members, onClose, onReload, settings, onSettingsChange 
         </div>
         <div className="modal__foot">
           <UpdateButton />
+          <RebootButton />
           <button className="btn-primary" onClick={onClose}>Done</button>
         </div>
       </div>
