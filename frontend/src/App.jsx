@@ -947,7 +947,7 @@ function useUpcomingImportant() {
     const id = setInterval(load, 5 * 60 * 1000);
     return () => clearInterval(id);
   }, [load]);
-  return events;
+  return { events, reload: load };
 }
 
 function CountdownCard({ event }) {
@@ -1007,7 +1007,7 @@ export default function App() {
 
   const { members, reload: reloadMembers } = useMembers();
   const { events,  reload: reloadEvents  } = useEvents(weekStart);
-  const countdownEvents                    = useUpcomingImportant();
+  const { events: countdownEvents, reload: reloadUpcoming } = useUpcomingImportant();
 
   const memberMap = Object.fromEntries(members.map(m => [m.id, m]));
 
@@ -1077,7 +1077,7 @@ export default function App() {
 
   async function deleteEvent(id) {
     await fetch(`${API}/events/${id}`, { method: "DELETE" });
-    reloadEvents(); setEvModal(null);
+    reloadEvents(); reloadUpcoming(); setEvModal(null);
   }
 
   async function saveEvent(data) {
@@ -1085,7 +1085,7 @@ export default function App() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    reloadEvents();
+    reloadEvents(); reloadUpcoming();
   }
 
   async function updateEvent(id, data) {
@@ -1093,7 +1093,7 @@ export default function App() {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    reloadEvents();
+    reloadEvents(); reloadUpcoming();
   }
 
   const isThisWeek = isSameDay(weekStart, startOfWeek(today));
