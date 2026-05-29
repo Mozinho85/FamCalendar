@@ -1197,25 +1197,28 @@ function PersonSummaryOverlay({ member, onClose }) {
     .sort((a, b) => parseLocalDate(a.start_datetime) - parseLocalDate(b.start_datetime))
     .slice(0, 3);
 
-  function EventRow({ ev, showDate }) {
+  function EventRow({ ev }) {
     const s = parseLocalDate(ev.start_datetime);
-    const timeLabel = showDate
-      ? `${s.getDate()} ${MONTHS[s.getMonth()].slice(0, 3)}`
-      : ev.all_day ? null : formatTime(ev.start_datetime);
+    const dayLabel = d => `${DAY_NAMES[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}`;
+    const dateStr = isMultiDayAllDay(ev)
+      ? `${dayLabel(s)} – ${dayLabel(displayEndDate(ev))}`
+      : dayLabel(s);
+    const timeStr = ev.all_day ? null : `${formatTime(ev.start_datetime)} – ${formatTime(ev.end_datetime)}`;
     return (
       <div className="ps__event" style={{ "--mc": member.color }}>
-        {timeLabel && <span className="ps__event-time">{timeLabel}</span>}
+        <span className="ps__event-date">{dateStr}</span>
+        {timeStr && <span className="ps__event-time">{timeStr}</span>}
         <span className="ps__event-title">{ev.title}</span>
       </div>
     );
   }
 
-  function Column({ title, evs, showDate }) {
+  function Column({ title, evs }) {
     return (
       <div className="ps__col">
         <h2 className="ps__col-title">{title}</h2>
         {evs.length
-          ? evs.map(ev => <EventRow key={ev.id} ev={ev} showDate={showDate} />)
+          ? evs.map(ev => <EventRow key={ev.id} ev={ev} />)
           : <p className="ps__empty">Nothing scheduled</p>}
       </div>
     );
@@ -1232,9 +1235,9 @@ function PersonSummaryOverlay({ member, onClose }) {
           <h1 className="ps__name">{member.name}</h1>
         </div>
         <div className="ps__columns">
-          <Column title="This Week"      evs={thisWeekEvents}  showDate={false} />
-          <Column title="Next Week"      evs={nextWeekEvents}  showDate={false} />
-          <Column title="Important"      evs={importantEvents} showDate={true}  />
+          <Column title="This Week"  evs={thisWeekEvents}  />
+          <Column title="Next Week"  evs={nextWeekEvents}  />
+          <Column title="Important"  evs={importantEvents} />
         </div>
         {loading && <div className="ps__loading">Loading…</div>}
       </div>
