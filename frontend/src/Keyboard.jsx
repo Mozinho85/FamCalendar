@@ -20,8 +20,8 @@ const ROWS_NUM = [
   ["ABC","(",")"," "," ","'",'"',"/","⌫"],
 ];
 
-const DEFAULT_W = 700;
-const DEFAULT_H = 320;
+const DEFAULT_W = 875;
+const DEFAULT_H = 400;
 
 export default function TouchKeyboard({ value, onChange, onDone, visible }) {
   const [mode, setMode]         = useState("alpha");

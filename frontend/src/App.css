@@ -1270,11 +1270,6 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   50%       { opacity: 0; }
 }
 
-/* Shift modal up when keyboard is open */
-.modal--kb-open {
-  transform: translateY(-180px);
-  transition: transform 0.2s ease;
-}
 
 /* ── Today panel ───────────────────────────────────────────────────── */
 .sidebar {

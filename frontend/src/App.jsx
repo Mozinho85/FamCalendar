@@ -247,7 +247,7 @@ function AddEventModal({ date, member, members, onClose, onSave, existingEvent }
   return (
     <>
       <div className="overlay" onClick={() => { setKbVisible(false); onClose(); }}>
-        <div className={`modal modal--add-event ${kbVisible ? "modal--kb-open" : ""}`}
+        <div className="modal modal--add-event"
           onClick={e => e.stopPropagation()}>
           <div className="modal__head">
             <h2>{ev ? "Edit event" : "Add event"}</h2>
