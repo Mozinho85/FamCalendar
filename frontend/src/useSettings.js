@@ -10,6 +10,8 @@ const DEFAULTS = {
   timezone: "Europe/London",
   tempUnit: "celsius",
   ambientIdleMinutes: 2,
+  ambientBackground: "none",
+  ambientSlideshowInterval: 30,
 };
 
 function loadCache() {
