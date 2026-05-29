@@ -55,6 +55,9 @@ const SETTINGS_DEFAULTS = {
   ambientIdleMinutes: 2,
   ambientBackground: "none",            // "none" | "slideshow"
   ambientSlideshowInterval: 30,         // seconds between slides
+  ambientShowHourly: true,
+  ambientShowWeekly: true,
+  ambientPanelOpacity: 0.55,
 };
 
 app.get('/api/settings', (req, res) => {

@@ -1614,6 +1614,13 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 }
 .s-select:focus { outline: none; border-color: var(--accent); }
 
+.s-slider {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+  height: 6px;
+}
+
 /* ── Ambient Photos Manager ─────────────────────────────────────────────────── */
 
 .s-photos {

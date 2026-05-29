@@ -753,6 +753,7 @@ function AmbientPhotosManager() {
 // ── Slideshow Settings Modal ──────────────────────────────────────────────────
 
 function SlideshowSettingsModal({ settings, onSettingsChange, onClose }) {
+  const opacity = Math.round((settings?.ambientPanelOpacity ?? 0.55) * 100);
   return (
     <div className="overlay overlay--raised" onClick={onClose}>
       <div className="modal modal--slideshow" onClick={e => e.stopPropagation()}>
@@ -775,7 +776,46 @@ function SlideshowSettingsModal({ settings, onSettingsChange, onClose }) {
               <option value={300}>5 minutes</option>
             </select>
           </div>
-          <p className="s-section-label" style={{ marginTop: 16 }}>Photos</p>
+
+          <div className="s-section-divider" />
+          <p className="s-section-heading">Weather overlay</p>
+
+          <div className="s-display-row">
+            <label className="s-label">Hourly forecast</label>
+            <div className="s-unit-toggle">
+              <button
+                className={`s-unit-btn ${settings?.ambientShowHourly !== false ? "s-unit-btn--on" : ""}`}
+                onClick={() => onSettingsChange({ ambientShowHourly: true })}>On</button>
+              <button
+                className={`s-unit-btn ${settings?.ambientShowHourly === false ? "s-unit-btn--on" : ""}`}
+                onClick={() => onSettingsChange({ ambientShowHourly: false })}>Off</button>
+            </div>
+          </div>
+
+          <div className="s-display-row">
+            <label className="s-label">7-day forecast</label>
+            <div className="s-unit-toggle">
+              <button
+                className={`s-unit-btn ${settings?.ambientShowWeekly !== false ? "s-unit-btn--on" : ""}`}
+                onClick={() => onSettingsChange({ ambientShowWeekly: true })}>On</button>
+              <button
+                className={`s-unit-btn ${settings?.ambientShowWeekly === false ? "s-unit-btn--on" : ""}`}
+                onClick={() => onSettingsChange({ ambientShowWeekly: false })}>Off</button>
+            </div>
+          </div>
+
+          <div className="s-display-row">
+            <label className="s-label">Panel opacity — {opacity}%</label>
+            <input
+              type="range" min="10" max="90" step="5"
+              value={opacity}
+              onChange={e => onSettingsChange({ ambientPanelOpacity: Number(e.target.value) / 100 })}
+              className="s-slider"
+            />
+          </div>
+
+          <div className="s-section-divider" />
+          <p className="s-section-label" style={{ marginTop: 4 }}>Photos</p>
           <AmbientPhotosManager />
         </div>
         <div className="modal__foot">

@@ -63,6 +63,10 @@ export default function AmbientMode({ current, hourly, daily, settings }) {
       return { dayName: DAYS_SHORT[dt.getDay()], dateStr, ...d };
     });
 
+  const panelOpacity = settings?.ambientPanelOpacity ?? 0.55;
+  const showHourly   = settings?.ambientShowHourly !== false;
+  const showWeekly   = settings?.ambientShowWeekly !== false;
+
   // Default centered layout (no slideshow)
   if (!slideshowActive) {
     return (
@@ -149,8 +153,8 @@ export default function AmbientMode({ current, hourly, daily, settings }) {
         <div className="ambient__date ambient__date--compact">{dayName}, {date}</div>
       </div>
 
-      {/* Weather — semi-translucent box, lower third */}
-      <div className="ambient__lower-third">
+      {/* Weather panel — bottom-left, shrinks to fit active elements */}
+      <div className="ambient__lower-third" style={{ '--panel-opacity': panelOpacity }}>
         {current && (
           <div className="ambient__weather ambient__weather--box">
             <span className="ambient__weather-icon">{current.icon}</span>
@@ -163,7 +167,7 @@ export default function AmbientMode({ current, hourly, daily, settings }) {
           <div className="ambient__location">📍 {settings.locationName}</div>
         )}
 
-        {upcomingHours.length > 0 && (
+        {showHourly && upcomingHours.length > 0 && (
           <div className="ambient__section">
             <div className="ambient__section-label">Today</div>
             <div className="ambient__hourly">
@@ -181,7 +185,7 @@ export default function AmbientMode({ current, hourly, daily, settings }) {
           </div>
         )}
 
-        {weekDays.length > 0 && (
+        {showWeekly && weekDays.length > 0 && (
           <div className="ambient__section">
             <div className="ambient__section-label">7-day forecast</div>
             <div className="ambient__week">
