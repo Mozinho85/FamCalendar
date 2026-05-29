@@ -102,9 +102,10 @@ app.post('/api/update', (req, res) => {
   res.setHeader('Content-Type', 'text/plain');
   res.setHeader('Transfer-Encoding', 'chunked');
 
-  // Force an update by temporarily clearing the local hash check
-  // by running the script with FORCE=1
-  const child = exec(`FORCE=1 bash ${scriptPath} 2>&1`);
+  const os = require('os');
+  const child = exec(`FORCE=1 bash ${scriptPath} 2>&1`, {
+    env: { ...process.env, HOME: os.homedir() },
+  });
 
   child.stdout.on('data', data => res.write(data));
   child.stderr.on('data', data => res.write(data));
