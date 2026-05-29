@@ -11,10 +11,82 @@
   animation: ambientIn 1.2s ease both;
 }
 
+.ambient--slideshow {
+  background: #000;
+}
+
 @keyframes ambientIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
+/* ── Slideshow background ─────────────────────────────────────────────────── */
+
+.ambient__slides {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.ambient__slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 2s ease-in-out;
+}
+
+.ambient__slide--active {
+  opacity: 1;
+}
+
+/* ── Clock top-right (slideshow layout) ───────────────────────────────────── */
+
+.ambient__clock-tr {
+  position: absolute;
+  top: 2rem;
+  right: 2.5rem;
+  z-index: 2;
+  text-align: right;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.7);
+}
+
+.ambient__time--compact {
+  font-size: clamp(48px, 8vw, 96px);
+}
+
+.ambient__date--compact {
+  font-size: clamp(14px, 1.8vw, 22px);
+  margin-top: -0.2rem;
+}
+
+/* ── Lower-third weather box (slideshow layout) ───────────────────────────── */
+
+.ambient__lower-third {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.5rem 2rem 2rem;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ambient__weather--box {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* ── Default centered content ─────────────────────────────────────────────── */
 
 .ambient__content {
   display: flex;
@@ -214,4 +286,16 @@
   color: #9ca3af;
   font-weight: 300;
   font-variant-numeric: tabular-nums;
+}
+
+/* ── Lower-third overrides for weather sections ───────────────────────────── */
+
+.ambient__lower-third .ambient__weather {
+  margin-top: 0;
+}
+
+.ambient__lower-third .ambient__hourly,
+.ambient__lower-third .ambient__week {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.1);
 }
