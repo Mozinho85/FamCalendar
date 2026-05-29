@@ -698,6 +698,58 @@ function RebootButton() {
   return <button className="btn-reboot" onClick={() => setStatus("confirm")}>↺ Reboot</button>;
 }
 
+// ── Ambient Photos Manager (used inside Settings) ─────────────────────────────
+
+function AmbientPhotosManager() {
+  const [photos, setPhotos] = useState([]);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => { loadPhotos(); }, []);
+
+  function loadPhotos() {
+    fetch("/api/ambient-photos")
+      .then(r => r.ok ? r.json() : [])
+      .then(setPhotos)
+      .catch(() => setPhotos([]));
+  }
+
+  async function handleUpload(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    const form = new FormData();
+    for (const f of files) form.append("photos", f);
+    try {
+      const res = await fetch("/api/ambient-photos", { method: "POST", body: form });
+      if (res.ok) loadPhotos();
+    } catch {}
+    setUploading(false);
+    e.target.value = "";
+  }
+
+  async function handleDelete(filename) {
+    await fetch(`/api/ambient-photos/${encodeURIComponent(filename)}`, { method: "DELETE" });
+    loadPhotos();
+  }
+
+  return (
+    <div className="s-photos">
+      <div className="s-photos__grid">
+        {photos.map(p => (
+          <div key={p.filename} className="s-photos__thumb">
+            <img src={p.url} alt="" />
+            <button className="s-photos__del" onClick={() => handleDelete(p.filename)}>✕</button>
+          </div>
+        ))}
+      </div>
+      <label className="s-photos__upload-btn">
+        {uploading ? "Uploading…" : "＋ Add photos"}
+        <input type="file" accept="image/*" multiple onChange={handleUpload} hidden />
+      </label>
+    </div>
+  );
+}
+
 // ── Settings Modal ────────────────────────────────────────────────────────────
 
 function SettingsModal({ members, onClose, onReload, settings, onSettingsChange }) {
@@ -914,6 +966,37 @@ function SettingsModal({ members, onClose, onReload, settings, onSettingsChange 
               <option value={30}>30 minutes</option>
             </select>
           </div>
+
+          <div className="s-display-row">
+            <label className="s-label">Background</label>
+            <select
+              className="s-select"
+              value={settings?.ambientBackground ?? "none"}
+              onChange={e => onSettingsChange({ ambientBackground: e.target.value })}>
+              <option value="none">Dark (default)</option>
+              <option value="slideshow">Photo slideshow</option>
+            </select>
+          </div>
+
+          {settings?.ambientBackground === "slideshow" && (
+            <>
+              <div className="s-display-row">
+                <label className="s-label">Slide interval</label>
+                <select
+                  className="s-select"
+                  value={settings?.ambientSlideshowInterval ?? 30}
+                  onChange={e => onSettingsChange({ ambientSlideshowInterval: Number(e.target.value) })}>
+                  <option value={10}>10 seconds</option>
+                  <option value={15}>15 seconds</option>
+                  <option value={30}>30 seconds</option>
+                  <option value={60}>1 minute</option>
+                  <option value={120}>2 minutes</option>
+                  <option value={300}>5 minutes</option>
+                </select>
+              </div>
+              <AmbientPhotosManager />
+            </>
+          )}
         </div>
         <div className="modal__foot">
           <UpdateButton />

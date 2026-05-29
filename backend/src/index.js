@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const cron = require('node-cron');
 const path = require('path');
+const fs = require('fs');
 
 const eventsRouter  = require('./routes/events');
 const membersRouter = require('./routes/members');
@@ -52,6 +53,8 @@ const SETTINGS_DEFAULTS = {
   timezone: "Europe/London",
   tempUnit: "celsius",
   ambientIdleMinutes: 2,
+  ambientBackground: "none",            // "none" | "slideshow"
+  ambientSlideshowInterval: 30,         // seconds between slides
 };
 
 app.get('/api/settings', (req, res) => {
@@ -138,6 +141,53 @@ app.get('/health', (req, res) => {
 
 // Serve avatars from data/avatars/ — separate from public/ so builds don't wipe them
 app.use('/avatars', express.static(path.join(__dirname, '../data/avatars')));
+
+// ── Ambient background photos ────────────────────────────────────────────────
+const ambientPhotosDir = path.join(__dirname, '../data/ambient-photos');
+if (!fs.existsSync(ambientPhotosDir)) fs.mkdirSync(ambientPhotosDir, { recursive: true });
+
+app.use('/ambient-photos', express.static(ambientPhotosDir));
+
+const multer = require('multer');
+const ambientUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, ambientPhotosDir),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+      const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+      cb(null, safeName);
+    },
+  }),
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB
+  fileFilter: (req, file, cb) => {
+    const allowed = /\.(jpe?g|png|webp|gif)$/i;
+    if (allowed.test(path.extname(file.originalname))) cb(null, true);
+    else cb(new Error('Only image files are allowed'));
+  },
+});
+
+app.get('/api/ambient-photos', (req, res) => {
+  const files = fs.readdirSync(ambientPhotosDir)
+    .filter(f => /\.(jpe?g|png|webp|gif)$/i.test(f))
+    .map(f => ({ filename: f, url: `/ambient-photos/${f}` }));
+  res.json(files);
+});
+
+app.post('/api/ambient-photos', ambientUpload.array('photos', 20), (req, res) => {
+  const uploaded = (req.files || []).map(f => ({ filename: f.filename, url: `/ambient-photos/${f.filename}` }));
+  res.json(uploaded);
+});
+
+app.delete('/api/ambient-photos/:filename', (req, res) => {
+  const filename = path.basename(req.params.filename);
+  const filePath = path.join(ambientPhotosDir, filename);
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+    res.json({ deleted: filename });
+  } else {
+    res.status(404).json({ error: 'Not found' });
+  }
+});
 
 // Serve the phone web UI as static files (built React app goes in /public)
 app.use(express.static(path.join(__dirname, '../public')));
