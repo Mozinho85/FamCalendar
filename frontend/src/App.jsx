@@ -868,6 +868,7 @@ function SlideshowSettingsModal({ settings, onSettingsChange, onClose }) {
 // ── Settings Modal ────────────────────────────────────────────────────────────
 
 function SettingsModal({ members, onClose, onReload, settings, onSettingsChange }) {
+  const { tap } = useFeedback();
   const [editing, setEditing]     = useState(null);
   const [editName, setEditName]   = useState("");
   const [editColor, setEditColor] = useState(PALETTE[0]);
@@ -1096,6 +1097,22 @@ function SettingsModal({ members, onClose, onReload, settings, onSettingsChange 
               {settings?.ambientBackground === "slideshow" && (
                 <button className="btn-icon btn-icon--settings" onClick={() => setShowSlideshow(true)}>⚙</button>
               )}
+            </div>
+          </div>
+
+          <div className="s-display-row">
+            <label className="s-label">Tap sound</label>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <select
+                className="s-select"
+                value={settings?.tapSound ?? "mechanical"}
+                onChange={e => onSettingsChange({ tapSound: e.target.value })}>
+                <option value="mechanical">Mechanical</option>
+                <option value="crisp">Crisp</option>
+                <option value="soft">Soft</option>
+                <option value="off">Off</option>
+              </select>
+              <button className="btn-icon" onClick={() => tap()}>&#9654; Test</button>
             </div>
           </div>
 

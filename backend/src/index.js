@@ -55,6 +55,7 @@ const SETTINGS_DEFAULTS = {
   ambientIdleMinutes: 2,
   ambientBackground: "none",            // "none" | "slideshow"
   ambientSlideshowInterval: 30,         // seconds between slides
+  tapSound: "mechanical",               // "mechanical" | "crisp" | "soft" | "off"
   ambientShowHourly: true,
   ambientShowWeekly: true,
   ambientPanelOpacity: 0.55,

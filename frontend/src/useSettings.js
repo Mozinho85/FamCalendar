@@ -12,6 +12,7 @@ const DEFAULTS = {
   ambientIdleMinutes: 2,
   ambientBackground: "none",
   ambientSlideshowInterval: 30,
+  tapSound: "mechanical",
 };
 
 function loadCache() {
