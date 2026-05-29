@@ -29,21 +29,16 @@ export default function TouchKeyboard({ value, onChange, onDone, visible }) {
   const [capsLock, setCapsLock] = useState(false);
   const { tap, back }           = useFeedback();
   const lastPress               = useRef(0);
-  const posInitialized          = useRef(false);
 
-  const [pos,  setPos]  = useState({ x: 0, y: 0 });
+  const [pos,  setPos]  = useState(() => ({
+    x: Math.max(0, (window.innerWidth  - DEFAULT_W) / 2),
+    y: Math.max(40, window.innerHeight - DEFAULT_H - 48),
+  }));
   const [size, setSize] = useState({ w: DEFAULT_W, h: DEFAULT_H });
 
-  // Set default position once, on first open
+  // Reset mode/shift on each open
   useEffect(() => {
     if (visible) {
-      if (!posInitialized.current) {
-        posInitialized.current = true;
-        setPos({
-          x: Math.max(0, (window.innerWidth  - DEFAULT_W) / 2),
-          y: Math.max(40, window.innerHeight - DEFAULT_H - 48),
-        });
-      }
       setMode("alpha");
       setShift(false);
     }
