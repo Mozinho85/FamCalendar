@@ -639,9 +639,10 @@ function UpdateButton() {
 
     if (accumulated.includes("Restarting backend")) {
       setStatus("restarting");
-      setTimeout(() => window.location.reload(), 7000);
+      setTimeout(() => window.location.reload(), 8000);
     } else if (accumulated.includes("Update complete") || accumulated.includes("Already up to date")) {
-      setStatus("done");
+      setStatus("restarting");
+      setTimeout(() => window.location.reload(), 3000);
     } else {
       setStatus("error");
     }
@@ -657,11 +658,6 @@ function UpdateButton() {
       )}
       {status === "restarting" && (
         <button className="btn-update btn-update--busy" disabled>Restarting… reloading shortly</button>
-      )}
-      {status === "done" && (
-        <button className="btn-update btn-update--done" onClick={() => { setStatus("idle"); setLog(""); }}>
-          ✓ Updated — tap to dismiss
-        </button>
       )}
       {status === "error" && (
         <button className="btn-update btn-update--error" onClick={() => { setStatus("idle"); setLog(""); }}>
@@ -696,6 +692,23 @@ function RebootButton() {
     );
   }
   return <button className="btn-reboot" onClick={() => setStatus("confirm")}>↺ Reboot</button>;
+}
+
+// ── Reload Button ─────────────────────────────────────────────────────────────
+
+function ReloadButton() {
+  const [status, setStatus] = useState("idle"); // idle | restarting
+
+  async function reload() {
+    setStatus("restarting");
+    try { await fetch(`${API}/restart`, { method: "POST" }); } catch {}
+    setTimeout(() => window.location.reload(), 5000);
+  }
+
+  if (status === "restarting") {
+    return <button className="btn-reload btn-reload--busy" disabled>↺ Restarting…</button>;
+  }
+  return <button className="btn-reload" onClick={reload}>↺ Reload</button>;
 }
 
 // ── Ambient Photos Manager (used inside Settings) ─────────────────────────────
@@ -1285,6 +1298,7 @@ export default function App() {
           )}
         </div>
         <button className="settings-btn" onClick={() => setShowSettings(true)}>⚙ Settings</button>
+        <ReloadButton />
         <div className="font-controls">
           <button className="font-btn" onClick={decreaseFontSize}>A−</button>
           <button className="font-btn" onClick={increaseFontSize}>A+</button>

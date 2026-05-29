@@ -1140,6 +1140,21 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 .btn-reboot:hover { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
 .btn-reboot--busy { opacity: 0.6; cursor: not-allowed; }
 
+.btn-reload {
+  padding: 8px 14px;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  border: 1px solid var(--border-md);
+  color: var(--text-2);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: var(--font);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.btn-reload:hover { background: var(--bg-hover); color: var(--text-1); }
+.btn-reload--busy { opacity: 0.6; cursor: not-allowed; }
+
 .reboot-confirm {
   display: flex;
   align-items: center;

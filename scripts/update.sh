@@ -78,6 +78,7 @@ if git diff "$LOCAL" HEAD --name-only 2>/dev/null | grep -q "^frontend/" || [ "$
 fi
 
 echo "Restarting backend..."
+sleep 2
 sudo systemctl restart famcalendar-backend 2>&1
 
 echo ""

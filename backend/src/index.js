@@ -139,6 +139,12 @@ app.post('/api/reboot', (req, res) => {
   setTimeout(() => require('child_process').exec('sudo reboot'), 500);
 });
 
+// Restart the backend service (frontend reloads itself after calling this)
+app.post('/api/restart', (req, res) => {
+  res.json({ restarting: true });
+  setTimeout(() => require('child_process').exec('sudo systemctl restart famcalendar-backend'), 500);
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: Math.floor(process.uptime()), timestamp: new Date().toISOString() });
