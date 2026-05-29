@@ -140,11 +140,16 @@ async function syncIcalForMember(member, url) {
       seenUids.add(instanceUid);
 
       const isAllDay = (event.datetype === 'date');
+      const localDateStr = d => {
+        const p = n => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+      };
       const startStr = isAllDay
-        ? start.toISOString().split('T')[0] + 'T00:00:00'
+        ? localDateStr(start) + 'T00:00:00'
         : start.toISOString();
+      // iCal all-day end is exclusive (next day); store as midnight so displayEndDate adjusts it correctly
       const endStr = isAllDay
-        ? end.toISOString().split('T')[0] + 'T23:59:59'
+        ? localDateStr(end) + 'T00:00:00'
         : end.toISOString();
 
       const existing = existingByUid.get(instanceUid, url);
