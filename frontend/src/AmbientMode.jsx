@@ -63,9 +63,10 @@ export default function AmbientMode({ current, hourly, daily, settings }) {
       return { dayName: DAYS_SHORT[dt.getDay()], dateStr, ...d };
     });
 
-  const panelOpacity = settings?.ambientPanelOpacity ?? 0.55;
-  const showHourly   = settings?.ambientShowHourly !== false;
-  const showWeekly   = settings?.ambientShowWeekly !== false;
+  const panelOpacity   = settings?.ambientPanelOpacity ?? 0.55;
+  const showHourly     = settings?.ambientShowHourly !== false;
+  const showWeekly     = settings?.ambientShowWeekly !== false;
+  const weatherScale   = settings?.ambientWeatherScale ?? 1;
 
   // Default centered layout (no slideshow)
   if (!slideshowActive) {
@@ -153,8 +154,9 @@ export default function AmbientMode({ current, hourly, daily, settings }) {
         <div className="ambient__date ambient__date--compact">{dayName}, {date}</div>
       </div>
 
-      {/* Weather panel — bottom-left, shrinks to fit active elements */}
+      {/* Weather panel — full-width bar, height driven by content */}
       <div className="ambient__lower-third" style={{ '--panel-opacity': panelOpacity }}>
+        <div style={{ zoom: weatherScale }}>
         {current && (
           <div className="ambient__weather ambient__weather--box">
             <span className="ambient__weather-icon">{current.icon}</span>
@@ -200,6 +202,7 @@ export default function AmbientMode({ current, hourly, daily, settings }) {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

@@ -58,6 +58,7 @@ const SETTINGS_DEFAULTS = {
   ambientShowHourly: true,
   ambientShowWeekly: true,
   ambientPanelOpacity: 0.55,
+  ambientWeatherScale: 1,
 };
 
 app.get('/api/settings', (req, res) => {
