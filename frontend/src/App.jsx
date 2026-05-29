@@ -1161,15 +1161,97 @@ function CountdownCard({ event }) {
   );
 }
 
+// ── Person Summary Overlay ───────────────────────────────────────────────────
+
+function PersonSummaryOverlay({ member, onClose }) {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const start = startOfWeek(today);
+    const end   = addDays(today, 180);
+    fetch(`${API}/events?start=${start.toISOString()}&end=${end.toISOString()}`)
+      .then(r => r.json())
+      .then(data => { setEvents(data.filter(e => e.member_id === member.id)); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [member.id]);
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const thisWeekStart = startOfWeek(today);
+  const nextWeekStart = addDays(thisWeekStart, 7);
+  const nextWeekEnd   = addDays(thisWeekStart, 14);
+
+  function evStart(ev) { const d = parseLocalDate(ev.start_datetime); d.setHours(0,0,0,0); return d; }
+
+  const thisWeekEvents = events
+    .filter(ev => { const s = evStart(ev); return s >= thisWeekStart && s < nextWeekStart; })
+    .sort((a, b) => parseLocalDate(a.start_datetime) - parseLocalDate(b.start_datetime));
+
+  const nextWeekEvents = events
+    .filter(ev => { const s = evStart(ev); return s >= nextWeekStart && s < nextWeekEnd; })
+    .sort((a, b) => parseLocalDate(a.start_datetime) - parseLocalDate(b.start_datetime));
+
+  const importantEvents = events
+    .filter(ev => ev.important && daysUntil(ev.start_datetime) >= 0)
+    .sort((a, b) => parseLocalDate(a.start_datetime) - parseLocalDate(b.start_datetime))
+    .slice(0, 3);
+
+  function EventRow({ ev, showDate }) {
+    const s = parseLocalDate(ev.start_datetime);
+    const timeLabel = showDate
+      ? `${s.getDate()} ${MONTHS[s.getMonth()].slice(0, 3)}`
+      : ev.all_day ? null : formatTime(ev.start_datetime);
+    return (
+      <div className="ps__event" style={{ "--mc": member.color }}>
+        {timeLabel && <span className="ps__event-time">{timeLabel}</span>}
+        <span className="ps__event-title">{ev.title}</span>
+      </div>
+    );
+  }
+
+  function Column({ title, evs, showDate }) {
+    return (
+      <div className="ps__col">
+        <h2 className="ps__col-title">{title}</h2>
+        {evs.length
+          ? evs.map(ev => <EventRow key={ev.id} ev={ev} showDate={showDate} />)
+          : <p className="ps__empty">Nothing scheduled</p>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="overlay ps-overlay" onClick={onClose}>
+      <div className="ps" onClick={e => e.stopPropagation()}>
+        <button className="modal__close ps__close" onClick={onClose}>✕</button>
+        <div className="ps__header" style={{ "--mc": member.color }}>
+          {member.avatar_url
+            ? <img src={member.avatar_url} alt={member.name} className="ps__avatar" />
+            : <div className="ps__avatar ps__avatar--initial">{member.name[0]}</div>}
+          <h1 className="ps__name">{member.name}</h1>
+        </div>
+        <div className="ps__columns">
+          <Column title="This Week"      evs={thisWeekEvents}  showDate={false} />
+          <Column title="Next Week"      evs={nextWeekEvents}  showDate={false} />
+          <Column title="Important"      evs={importantEvents} showDate={true}  />
+        </div>
+        {loading && <div className="ps__loading">Loading…</div>}
+      </div>
+    </div>
+  );
+}
+
 // ── Main App ──────────────────────────────────────────────────────────────────
 
 export default function App() {
   const now   = useClock();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const [weekStart, setWeekStart] = useState(() => startOfWeek(today));
-  const [addModal, setAddModal]   = useState(null);
-  const [evModal, setEvModal]     = useState(null);
-  const [editModal, setEditModal] = useState(null);
+  const [addModal, setAddModal]         = useState(null);
+  const [evModal, setEvModal]           = useState(null);
+  const [editModal, setEditModal]       = useState(null);
+  const [personSummary, setPersonSummary] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading]     = useState(true);
@@ -1211,8 +1293,9 @@ export default function App() {
   const handlePrevWeek = useDebounce(useCallback(() => { tap(); setWeekStart(w => addDays(w, -7)); }, [tap]), 600);
   const handleNextWeek = useDebounce(useCallback(() => { tap(); setWeekStart(w => addDays(w,  7)); }, [tap]), 600);
   const handleToday    = useDebounce(useCallback(() => { tap(); setWeekStart(startOfWeek(today)); }, [tap, today]), 600);
-  const handleCellTap  = useDebounce(useCallback((member, day) => { if (waking) return; tap(); setAddModal({ member, date: day }); }, [tap, waking]), 600);
-  const handleEventTap = useDebounce(useCallback((ev, member) => { if (waking) return; tap(); setEvModal({ event: ev, member }); }, [tap, waking]), 600);
+  const handleCellTap   = useDebounce(useCallback((member, day) => { if (waking) return; tap(); setAddModal({ member, date: day }); }, [tap, waking]), 600);
+  const handleEventTap  = useDebounce(useCallback((ev, member) => { if (waking) return; tap(); setEvModal({ event: ev, member }); }, [tap, waking]), 600);
+  const handleAvatarTap = useDebounce(useCallback((member) => { if (waking) return; tap(); setPersonSummary(member); }, [tap, waking]), 300);
 
   // Swipe gestures
   // 1 finger left/right → change week; 2 fingers down → ambient mode
@@ -1361,7 +1444,8 @@ export default function App() {
               const spanningEvs = mEvents.filter(e => isMultiDayAllDay(e));
               return (
                 <div key={m.id} className="cal__row">
-                  <div className="cal__row-label" style={{ "--mc": m.color }}>
+                  <div className="cal__row-label" style={{ "--mc": m.color, cursor: "pointer" }}
+                    onClick={e => { e.stopPropagation(); handleAvatarTap(m); }}>
                     {m.avatar_url ? (
                       <img src={m.avatar_url} alt={m.name} className="cal__avatar cal__avatar--img" />
                     ) : (
@@ -1542,6 +1626,9 @@ export default function App() {
       {showSettings && (
         <SettingsModal members={members} settings={settings} onSettingsChange={updateSettings}
           onClose={() => setShowSettings(false)} onReload={reloadMembers} />
+      )}
+      {personSummary && (
+        <PersonSummaryOverlay member={personSummary} onClose={() => setPersonSummary(null)} />
       )}
     </div>
   );
