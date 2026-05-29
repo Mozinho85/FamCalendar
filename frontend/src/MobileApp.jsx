@@ -6,6 +6,10 @@ const API = "/api";
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function pad(n) { return String(n).padStart(2, "0"); }
+function parseLocalDate(str) {
+  if (!str) return new Date(NaN);
+  return str.length === 10 ? new Date(str + 'T00:00:00') : new Date(str);
+}
 function formatTime(dt) { const d = new Date(dt); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
 function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() &&
@@ -134,7 +138,7 @@ function AddEventSheet({ date, members, onClose, onSave }) {
 // ── Event detail sheet ────────────────────────────────────────────────────────
 
 function EventSheet({ event, member, onClose, onDelete }) {
-  const start = new Date(event.start_datetime);
+  const start = parseLocalDate(event.start_datetime);
   return (
     <div className="sheet-overlay" onClick={onClose}>
       <div className="sheet" onClick={e => e.stopPropagation()}>
@@ -182,8 +186,8 @@ function DayStrip({ selectedDate, onSelect, events, members }) {
 
   function hasEvents(day) {
     return events.some(e => {
-      const s = new Date(e.start_datetime); s.setHours(0,0,0,0);
-      const en = new Date(e.end_datetime); en.setHours(23,59,59,999);
+      const s = parseLocalDate(e.start_datetime); s.setHours(0,0,0,0);
+      const en = parseLocalDate(e.end_datetime); en.setHours(23,59,59,999);
       return day >= s && day <= en;
     });
   }
@@ -216,11 +220,11 @@ function AgendaDay({ date, events, members, onEventTap, onAddTap }) {
   const memberMap = Object.fromEntries(members.map(m => [m.id, m]));
 
   const dayEvents = events.filter(e => {
-    const s = new Date(e.start_datetime); s.setHours(0,0,0,0);
-    const en = new Date(e.end_datetime); en.setHours(23,59,59,999);
+    const s = parseLocalDate(e.start_datetime); s.setHours(0,0,0,0);
+    const en = parseLocalDate(e.end_datetime); en.setHours(23,59,59,999);
     const d = new Date(date); d.setHours(0,0,0,0);
     return d >= s && d <= en;
-  }).sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime));
+  }).sort((a, b) => parseLocalDate(a.start_datetime) - parseLocalDate(b.start_datetime));
 
   return (
     <div className="agenda">

@@ -39,7 +39,7 @@ function isBirthday(event) {
 
 function daysUntil(dateStr) {
   const today = new Date(); today.setHours(0,0,0,0);
-  const target = new Date(dateStr); target.setHours(0,0,0,0);
+  const target = parseLocalDate(dateStr); target.setHours(0,0,0,0);
   return Math.round((target - today) / (1000 * 60 * 60 * 24));
 }
 
@@ -48,6 +48,12 @@ function dateKey(date) {
 }
 
 function pad(n) { return String(n).padStart(2, "0"); }
+// Date-only strings (from Google Calendar API) are parsed as UTC by new Date().
+// This helper forces local-time interpretation so all-day events never shift a day.
+function parseLocalDate(str) {
+  if (!str) return new Date(NaN);
+  return str.length === 10 ? new Date(str + 'T00:00:00') : new Date(str);
+}
 function formatTime(dt) { const d = new Date(dt); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
 function startOfWeek(date) {
   const d = new Date(date);
@@ -68,7 +74,7 @@ function isSameDay(a, b) {
 // For all-day events Google/iCal use exclusive end (midnight next day).
 // Normalise to the last inclusive day for display.
 function displayEndDate(ev) {
-  const end = new Date(ev.end_datetime);
+  const end = parseLocalDate(ev.end_datetime);
   if (ev.all_day && end.getHours() === 0 && end.getMinutes() === 0 && end.getSeconds() === 0) {
     return addDays(end, -1);
   }
@@ -77,25 +83,25 @@ function displayEndDate(ev) {
 
 function isMultiDayAllDay(ev) {
   if (!ev.all_day) return false;
-  const start = new Date(ev.start_datetime);
+  const start = parseLocalDate(ev.start_datetime);
   return !isSameDay(start, displayEndDate(ev));
 }
 
 function eventOnDay(ev, day) {
   if (!ev.all_day) {
     // Timed events: only on start day, even if they run past midnight
-    return isSameDay(new Date(ev.start_datetime), day);
+    return isSameDay(parseLocalDate(ev.start_datetime), day);
   }
   if (isMultiDayAllDay(ev)) {
     return false; // rendered separately in the spanning layer
   }
-  return isSameDay(new Date(ev.start_datetime), day);
+  return isSameDay(parseLocalDate(ev.start_datetime), day);
 }
 
 // Returns { startCol, endCol, startsBeforeWeek, endsAfterWeek } for spanning events.
 // Columns are 1-based; endCol is exclusive (for CSS grid-column).
 function getEventSpan(ev, days) {
-  const s = new Date(ev.start_datetime); s.setHours(0, 0, 0, 0);
+  const s = parseLocalDate(ev.start_datetime); s.setHours(0, 0, 0, 0);
   const e = displayEndDate(ev);          e.setHours(0, 0, 0, 0);
 
   const wFirst = new Date(days[0]); wFirst.setHours(0, 0, 0, 0);
@@ -180,7 +186,7 @@ function AddEventModal({ date, member, members, onClose, onSave, existingEvent }
   }
   function initEndDateStr() {
     if (ev) {
-      const end = new Date(ev.end_datetime);
+      const end = parseLocalDate(ev.end_datetime);
       if (ev.all_day && end.getHours() === 0 && end.getMinutes() === 0 && end.getSeconds() === 0) {
         const d = addDays(end, -1);
         return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -363,8 +369,8 @@ function AddEventModal({ date, member, members, onClose, onSave, existingEvent }
 // ── Event Detail Modal ────────────────────────────────────────────────────────
 
 function EventModal({ event, member, onClose, onDelete, onEdit, onToggleImportant }) {
-  const start = new Date(event.start_datetime);
-  const end   = new Date(event.end_datetime);
+  const start = parseLocalDate(event.start_datetime);
+  const end   = parseLocalDate(event.end_datetime);
   const isMultiDay = event.all_day && !isSameDay(start, displayEndDate(event));
   const isHoliday  = event.source === "holiday";
   return (
@@ -1137,7 +1143,7 @@ function useUpcomingImportant() {
 }
 
 function CountdownCard({ event }) {
-  const start   = new Date(event.start_datetime);
+  const start   = parseLocalDate(event.start_datetime);
   const days    = daysUntil(event.start_datetime);
   const dayName = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][start.getDay()];
   const dateStr = `${start.getDate()} ${MONTHS[start.getMonth()]}`;

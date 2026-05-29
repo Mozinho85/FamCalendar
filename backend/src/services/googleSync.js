@@ -126,8 +126,9 @@ async function syncCalendarForMember(member, calendarId) {
       }
 
       const isAllDay = Boolean(event.start?.date);
-      const startDt = event.start?.dateTime || event.start?.date;
-      const endDt   = event.end?.dateTime   || event.end?.date;
+      const normDate = d => d?.length === 10 ? `${d}T00:00:00` : d;
+      const startDt = normDate(event.start?.dateTime || event.start?.date);
+      const endDt   = normDate(event.end?.dateTime   || event.end?.date);
 
       if (!startDt || !endDt) continue;
 
