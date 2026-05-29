@@ -1513,6 +1513,26 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   margin-bottom: 14px;
 }
 
+.s-display-row__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-icon--settings {
+  font-size: 1.1rem;
+  padding: 8px 10px;
+  flex-shrink: 0;
+}
+
+.overlay--raised { z-index: 60; }
+
+.modal--slideshow {
+  width: 500px;
+  max-width: 96vw;
+  max-height: 85vh;
+}
+
 .s-label {
   font-size: 0.8125rem;
   color: var(--text-2);

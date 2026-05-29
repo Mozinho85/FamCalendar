@@ -750,12 +750,49 @@ function AmbientPhotosManager() {
   );
 }
 
+// ── Slideshow Settings Modal ──────────────────────────────────────────────────
+
+function SlideshowSettingsModal({ settings, onSettingsChange, onClose }) {
+  return (
+    <div className="overlay overlay--raised" onClick={onClose}>
+      <div className="modal modal--slideshow" onClick={e => e.stopPropagation()}>
+        <div className="modal__head">
+          <h2>Slideshow settings</h2>
+          <button className="modal__close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal__body">
+          <div className="s-display-row">
+            <label className="s-label">Slide interval</label>
+            <select
+              className="s-select"
+              value={settings?.ambientSlideshowInterval ?? 30}
+              onChange={e => onSettingsChange({ ambientSlideshowInterval: Number(e.target.value) })}>
+              <option value={10}>10 seconds</option>
+              <option value={15}>15 seconds</option>
+              <option value={30}>30 seconds</option>
+              <option value={60}>1 minute</option>
+              <option value={120}>2 minutes</option>
+              <option value={300}>5 minutes</option>
+            </select>
+          </div>
+          <p className="s-section-label" style={{ marginTop: 16 }}>Photos</p>
+          <AmbientPhotosManager />
+        </div>
+        <div className="modal__foot">
+          <button className="btn-primary" onClick={onClose}>Done</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Settings Modal ────────────────────────────────────────────────────────────
 
 function SettingsModal({ members, onClose, onReload, settings, onSettingsChange }) {
   const [editing, setEditing]     = useState(null);
   const [editName, setEditName]   = useState("");
   const [editColor, setEditColor] = useState(PALETTE[0]);
+  const [showSlideshow, setShowSlideshow] = useState(false);
   const [expanded, setExpanded]   = useState(null);
   const [addingNew, setAddingNew] = useState(false);
   const [newName, setNewName]     = useState("");
@@ -969,33 +1006,26 @@ function SettingsModal({ members, onClose, onReload, settings, onSettingsChange 
 
           <div className="s-display-row">
             <label className="s-label">Background</label>
-            <select
-              className="s-select"
-              value={settings?.ambientBackground ?? "none"}
-              onChange={e => onSettingsChange({ ambientBackground: e.target.value })}>
-              <option value="none">Dark (default)</option>
-              <option value="slideshow">Photo slideshow</option>
-            </select>
+            <div className="s-display-row__controls">
+              <select
+                className="s-select"
+                value={settings?.ambientBackground ?? "none"}
+                onChange={e => onSettingsChange({ ambientBackground: e.target.value })}>
+                <option value="none">Dark (default)</option>
+                <option value="slideshow">Photo slideshow</option>
+              </select>
+              {settings?.ambientBackground === "slideshow" && (
+                <button className="btn-icon btn-icon--settings" onClick={() => setShowSlideshow(true)}>⚙</button>
+              )}
+            </div>
           </div>
 
-          {settings?.ambientBackground === "slideshow" && (
-            <>
-              <div className="s-display-row">
-                <label className="s-label">Slide interval</label>
-                <select
-                  className="s-select"
-                  value={settings?.ambientSlideshowInterval ?? 30}
-                  onChange={e => onSettingsChange({ ambientSlideshowInterval: Number(e.target.value) })}>
-                  <option value={10}>10 seconds</option>
-                  <option value={15}>15 seconds</option>
-                  <option value={30}>30 seconds</option>
-                  <option value={60}>1 minute</option>
-                  <option value={120}>2 minutes</option>
-                  <option value={300}>5 minutes</option>
-                </select>
-              </div>
-              <AmbientPhotosManager />
-            </>
+          {showSlideshow && (
+            <SlideshowSettingsModal
+              settings={settings}
+              onSettingsChange={onSettingsChange}
+              onClose={() => setShowSlideshow(false)}
+            />
           )}
         </div>
         <div className="modal__foot">
