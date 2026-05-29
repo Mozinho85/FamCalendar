@@ -828,7 +828,17 @@ function SlideshowSettingsModal({ settings, onSettingsChange, onClose }) {
           </div>
 
           <div className="s-display-row">
-            <label className="s-label">Element scale — {Math.round((settings?.ambientWeatherScale ?? 1) * 100)}%</label>
+            <label className="s-label">Current weather scale — {Math.round((settings?.ambientCurrentWeatherScale ?? 1) * 100)}%</label>
+            <input
+              type="range" min="50" max="200" step="5"
+              value={Math.round((settings?.ambientCurrentWeatherScale ?? 1) * 100)}
+              onChange={e => onSettingsChange({ ambientCurrentWeatherScale: Number(e.target.value) / 100 })}
+              className="s-slider"
+            />
+          </div>
+
+          <div className="s-display-row">
+            <label className="s-label">Forecast scale — {Math.round((settings?.ambientWeatherScale ?? 1) * 100)}%</label>
             <input
               type="range" min="50" max="150" step="5"
               value={Math.round((settings?.ambientWeatherScale ?? 1) * 100)}

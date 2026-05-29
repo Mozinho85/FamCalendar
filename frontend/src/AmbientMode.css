@@ -41,6 +41,46 @@
   opacity: 1;
 }
 
+/* ── Current weather top-left (slideshow layout) ──────────────────────────── */
+
+.ambient__weather-tl {
+  position: absolute;
+  top: 2rem;
+  left: 2.5rem;
+  z-index: 2;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+}
+
+.ambient__weather-tl__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ambient__weather-tl .ambient__weather-icon {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+}
+
+.ambient__weather-tl .ambient__weather-temp {
+  font-size: clamp(1.6rem, 3.2vw, 2.8rem);
+  font-weight: 300;
+  color: #e5e7eb;
+  font-variant-numeric: tabular-nums;
+}
+
+.ambient__weather-tl .ambient__weather-label {
+  font-size: clamp(1rem, 1.6vw, 1.4rem);
+  color: #d1d5db;
+  font-weight: 300;
+}
+
+.ambient__weather-tl .ambient__location {
+  margin-top: 0.3rem;
+  font-size: clamp(0.9rem, 1.3vw, 1.15rem);
+  color: #d1d5db;
+  letter-spacing: 0.06em;
+}
+
 /* ── Clock top-right (slideshow layout) ───────────────────────────────────── */
 
 .ambient__clock-tr {

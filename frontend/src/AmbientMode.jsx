@@ -63,10 +63,11 @@ export default function AmbientMode({ current, hourly, daily, settings }) {
       return { dayName: DAYS_SHORT[dt.getDay()], dateStr, ...d };
     });
 
-  const panelOpacity   = settings?.ambientPanelOpacity ?? 0.55;
-  const showHourly     = settings?.ambientShowHourly !== false;
-  const showWeekly     = settings?.ambientShowWeekly !== false;
-  const weatherScale   = settings?.ambientWeatherScale ?? 1;
+  const panelOpacity        = settings?.ambientPanelOpacity ?? 0.55;
+  const showHourly          = settings?.ambientShowHourly !== false;
+  const showWeekly          = settings?.ambientShowWeekly !== false;
+  const weatherScale        = settings?.ambientWeatherScale ?? 1;
+  const currentWeatherScale = settings?.ambientCurrentWeatherScale ?? 1;
 
   // Default centered layout (no slideshow)
   if (!slideshowActive) {
@@ -154,20 +155,26 @@ export default function AmbientMode({ current, hourly, daily, settings }) {
         <div className="ambient__date ambient__date--compact">{dayName}, {date}</div>
       </div>
 
-      {/* Weather panel — full-width bar, height driven by content */}
+      {/* Current weather — top left, floating over image, no panel */}
+      {(current || settings?.locationName) && (
+        <div className="ambient__weather-tl" style={{ zoom: currentWeatherScale }}>
+          {current && (
+            <div className="ambient__weather-tl__row">
+              <span className="ambient__weather-icon">{current.icon}</span>
+              <span className="ambient__weather-temp">{current.temp}{unit}</span>
+              <span className="ambient__weather-label">{current.label}</span>
+            </div>
+          )}
+          {settings?.locationName && (
+            <div className="ambient__location">📍 {settings.locationName}</div>
+          )}
+        </div>
+      )}
+
+      {/* Forecast panel — full-width bar, hidden when both forecasts are off */}
+      {(showHourly || showWeekly) && (
       <div className="ambient__lower-third" style={{ '--panel-opacity': panelOpacity }}>
         <div style={{ zoom: weatherScale }}>
-        {current && (
-          <div className="ambient__weather ambient__weather--box">
-            <span className="ambient__weather-icon">{current.icon}</span>
-            <span className="ambient__weather-temp">{current.temp}{unit}</span>
-            <span className="ambient__weather-label">{current.label}</span>
-          </div>
-        )}
-
-        {settings?.locationName && (
-          <div className="ambient__location">📍 {settings.locationName}</div>
-        )}
 
         {showHourly && upcomingHours.length > 0 && (
           <div className="ambient__section">
@@ -204,6 +211,7 @@ export default function AmbientMode({ current, hourly, daily, settings }) {
         )}
         </div>
       </div>
+      )}
     </div>
   );
 }
