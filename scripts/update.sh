@@ -6,6 +6,16 @@
 # Ensure npm/node are on PATH regardless of how this script was invoked
 export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
 
+# When run from the web UI (no SSH agent), explicitly point git at the SSH key
+if [ -z "$SSH_AUTH_SOCK" ]; then
+  for key in ~/.ssh/id_ed25519 ~/.ssh/id_rsa ~/.ssh/id_ecdsa; do
+    if [ -f "$key" ]; then
+      export GIT_SSH_COMMAND="ssh -i $key -o StrictHostKeyChecking=no -o BatchMode=yes"
+      break
+    fi
+  done
+fi
+
 # Detect user
 if id "ubuntu" &>/dev/null; then
   FAMCAL_USER="ubuntu"
