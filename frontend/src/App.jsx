@@ -1262,6 +1262,61 @@ function PersonSummaryOverlay({ member, onClose }) {
   );
 }
 
+function VoiceAssistantDock({ voice }) {
+  const statusLabel = {
+    off: "Off",
+    unsupported: "Unsupported",
+    listening: "Listening",
+    "listening-local": "Local wake listening",
+    "listening-local-wait": "Local wake waiting",
+    capturing: "Capturing",
+    saving: "Saving",
+  }[voice.status] || voice.status;
+
+  return (
+    <div className="voice-dock">
+      <div className="voice-dock__row">
+        <button
+          className={`voice-btn ${voice.enabled ? "voice-btn--on" : ""}`}
+          onClick={() => voice.setEnabled(v => !v)}
+          disabled={!voice.supported}
+        >
+          {voice.enabled ? "Voice: On" : "Voice: Off"}
+        </button>
+        <button
+          className={`voice-btn ${voice.useLocalWake ? "voice-btn--on" : ""}`}
+          onClick={() => voice.setUseLocalWake(v => !v)}
+          disabled={!voice.localWakeAvailable}
+          title={voice.localWakeAvailable ? "Use backend local wake listener" : "Local wake unavailable on backend"}
+        >
+          {voice.useLocalWake ? "Local wake: On" : "Local wake: Off"}
+        </button>
+        <button
+          className="voice-btn voice-btn--secondary"
+          onClick={voice.captureNow}
+          disabled={!voice.supported || voice.busy}
+        >
+          Tap to speak
+        </button>
+        {voice.conversationActive && (
+          <button
+            className="voice-btn voice-btn--secondary"
+            onClick={voice.cancelConversation}
+          >
+            Cancel
+          </button>
+        )}
+      </div>
+
+      <div className="voice-dock__status">Status: {statusLabel}</div>
+      <div className="voice-dock__status">Backend wake: {voice.localWakeRunning ? "Running" : "Stopped"}</div>
+      <div className="voice-dock__assistant">{voice.assistantText}</div>
+      {voice.lastHeard && <div className="voice-dock__heard">Heard: {voice.lastHeard}</div>}
+      {voice.error && <div className="voice-dock__error">{voice.error}</div>}
+    </div>
+  );
+}
+
 // ── Main App ──────────────────────────────────────────────────────────────────
 
 export default function App() {

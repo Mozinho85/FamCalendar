@@ -1837,3 +1837,87 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 .s-photos__upload-btn:hover {
   background: rgba(255,255,255,0.12);
 }
+
+/* ── Voice assistant dock ───────────────────────────────────────────── */
+.voice-dock {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  width: min(560px, calc(100vw - 40px));
+  background: rgba(17, 19, 24, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(8px);
+  color: #f6f7fb;
+  padding: 12px 14px;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.voice-dock__row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.voice-btn {
+  padding: 8px 14px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.1);
+  color: #f6f7fb;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.voice-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.voice-btn:disabled {
+  opacity: 0.45;
+}
+
+.voice-btn--on {
+  background: #2db88a;
+  border-color: #6de2bd;
+  color: #06261d;
+}
+
+.voice-btn--secondary {
+  font-weight: 500;
+}
+
+.voice-dock__status {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  opacity: 0.9;
+}
+
+.voice-dock__assistant {
+  font-size: 0.91rem;
+  line-height: 1.35;
+}
+
+.voice-dock__heard {
+  font-size: 0.82rem;
+  color: #c9d0dd;
+}
+
+.voice-dock__error {
+  font-size: 0.8rem;
+  color: #ffb3ba;
+}
+
+@media (max-width: 900px) {
+  .voice-dock {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: auto;
+  }
+}
