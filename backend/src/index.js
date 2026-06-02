@@ -161,6 +161,23 @@ if (!fs.existsSync(ambientPhotosDir)) fs.mkdirSync(ambientPhotosDir, { recursive
 
 app.use('/ambient-photos', express.static(ambientPhotosDir));
 
+// ── Recordings (motion CCTV clips) ───────────────────────────────────────────
+const recordingsDir = path.join(path.dirname(process.env.DB_PATH || path.join(__dirname, '../../data/events.db')), 'recordings');
+
+app.get('/api/recordings', (req, res) => {
+  if (!fs.existsSync(recordingsDir)) return res.json([]);
+  const files = fs.readdirSync(recordingsDir)
+    .filter(f => /\.(mp4|webm)$/i.test(f))
+    .map(f => {
+      const stat = fs.statSync(path.join(recordingsDir, f));
+      return { name: f, size: stat.size, mtime: stat.mtimeMs };
+    })
+    .sort((a, b) => b.mtime - a.mtime);
+  res.json(files);
+});
+
+app.use('/api/recordings/files', express.static(recordingsDir));
+
 const multer = require('multer');
 const ambientUpload = multer({
   storage: multer.diskStorage({

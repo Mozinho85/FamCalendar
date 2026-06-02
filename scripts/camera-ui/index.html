@@ -34,6 +34,7 @@ canvas{display:none}
 .ctrl-btn--rec.recording{background:rgba(239,68,68,.9)}
 .ctrl-label{font-size:11px;color:#aaa;font-weight:500}
 .ctrl-btn--snap{background:rgba(34,197,94,.2);border-color:rgba(34,197,94,.5)}
+.ctrl-btn--clips{background:rgba(99,102,241,.2);border-color:rgba(99,102,241,.5)}
 .zoom-reset{position:fixed;bottom:calc(env(safe-area-inset-bottom,16px) + 96px);left:50%;transform:translateX(-50%);display:none;padding:8px 18px;background:rgba(0,0,0,.6);border-radius:20px;color:#fff;font-size:13px;border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(10px);z-index:10}
 .zoom-reset--show{display:block}
 .flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:20}
@@ -46,6 +47,38 @@ canvas{display:none}
 .spinner{width:40px;height:40px;border:3px solid #333;border-top-color:#22c55e;border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .retry-btn{padding:12px 28px;border-radius:24px;background:#1f2937;color:#fff;border:none;font-size:15px;font-weight:500}
+
+/* ── Recordings panel ───────────────────────────────────────────────────── */
+.clips-panel{position:fixed;inset:0;background:#0a0a0f;z-index:40;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s ease}
+.clips-panel--open{transform:translateY(0)}
+.clips-header{display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,12px) + 14px) 20px 14px;border-bottom:1px solid #1e1e2e;flex-shrink:0}
+.clips-header__title{color:#fff;font-size:18px;font-weight:600}
+.clips-header__close{width:36px;height:36px;border-radius:50%;background:#1e1e2e;border:none;color:#aaa;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.clips-body{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+.clips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.clip-card{background:#111118;border-radius:12px;overflow:hidden;cursor:pointer;border:1px solid #1e1e2e;transition:border-color .15s}
+.clip-card:active{border-color:#6366f1}
+.clip-thumb{position:relative;width:100%;aspect-ratio:16/9;background:#0d0d14;overflow:hidden}
+.clip-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.clip-thumb__spinner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.clip-thumb__spinner .spinner{border-top-color:#6366f1;width:28px;height:28px;border-width:2px}
+.clip-thumb__play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}
+.clip-card:hover .clip-thumb__play{opacity:1}
+.clip-thumb__play span{width:48px;height:48px;border-radius:50%;background:rgba(99,102,241,.85);display:flex;align-items:center;justify-content:center;font-size:20px}
+.clip-info{padding:10px 12px}
+.clip-info__date{color:#e2e8f0;font-size:14px;font-weight:500}
+.clip-info__meta{color:#666;font-size:12px;margin-top:3px}
+.clips-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:200px;color:#555;font-size:15px}
+.clips-loading{display:flex;align-items:center;justify-content:center;height:200px}
+
+/* ── Video player ────────────────────────────────────────────────────────── */
+.player-panel{position:fixed;inset:0;background:#000;z-index:50;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s ease}
+.player-panel--open{transform:translateY(0)}
+.player-header{display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top,12px) + 10px) 16px 10px;flex-shrink:0}
+.player-header__back{width:36px;height:36px;border-radius:50%;background:#1e1e2e;border:none;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.player-header__title{color:#e2e8f0;font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.player-video-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:#000;min-height:0}
+.player-video-wrap video{max-width:100%;max-height:100%;outline:none}
 </style>
 </head>
 <body>
@@ -56,14 +89,37 @@ canvas{display:none}
 <div class="rec-badge" id="recBadge"><span class="rdot"></span><span id="recTime">0:00</span></div>
 <div class="zoom-reset" id="zoomReset" onclick="resetZoom()">Reset zoom</div>
 <div class="controls">
-<button class="ctrl" onclick="takeSnapshot()"><div class="ctrl-btn ctrl-btn--snap">📷</div><span class="ctrl-label">Photo</span></button>
-<button class="ctrl" onclick="toggleRecording()"><div class="ctrl-btn ctrl-btn--rec" id="recBtn">⏺</div><span class="ctrl-label" id="recLabel">Record</span></button>
-<button class="ctrl" onclick="toggleFullscreen()"><div class="ctrl-btn">⛶</div><span class="ctrl-label">Full</span></button>
+  <button class="ctrl" onclick="takeSnapshot()"><div class="ctrl-btn ctrl-btn--snap">📷</div><span class="ctrl-label">Photo</span></button>
+  <button class="ctrl" onclick="toggleRecording()"><div class="ctrl-btn ctrl-btn--rec" id="recBtn">⏺</div><span class="ctrl-label" id="recLabel">Record</span></button>
+  <button class="ctrl" onclick="openClips()"><div class="ctrl-btn ctrl-btn--clips">🎞</div><span class="ctrl-label">Footage</span></button>
+  <button class="ctrl" onclick="toggleFullscreen()"><div class="ctrl-btn">⛶</div><span class="ctrl-label">Full</span></button>
 </div>
 <div class="flash" id="flash"></div>
 <div class="toast" id="toast"></div>
 <div class="overlay" id="overlay"><div class="spinner" id="spinner"></div><div id="overlayText">Connecting to camera...</div><button class="retry-btn" id="retryBtn" style="display:none" onclick="connect()">Retry</button></div>
+
+<!-- Recordings panel -->
+<div class="clips-panel" id="clipsPanel">
+  <div class="clips-header">
+    <span class="clips-header__title">Recorded Footage</span>
+    <button class="clips-header__close" onclick="closeClips()">✕</button>
+  </div>
+  <div class="clips-body" id="clipsBody"></div>
+</div>
+
+<!-- Video player panel -->
+<div class="player-panel" id="playerPanel">
+  <div class="player-header">
+    <button class="player-header__back" onclick="closePlayer()">‹</button>
+    <span class="player-header__title" id="playerTitle"></span>
+  </div>
+  <div class="player-video-wrap">
+    <video id="playerVideo" controls playsinline></video>
+  </div>
+</div>
+
 <script>
+const API_BASE=`http://${location.hostname}:3001`;
 const STREAM_URL=`http://${location.hostname}:8090/stream`;
 const img=document.getElementById('stream'),canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d'),dot=document.getElementById('dot'),statusText=document.getElementById('statusText'),overlay=document.getElementById('overlay'),overlayText=document.getElementById('overlayText'),spinner=document.getElementById('spinner'),retryBtn=document.getElementById('retryBtn'),timestampEl=document.getElementById('timestamp');
 let reconnectTimer=null;
@@ -91,6 +147,110 @@ wrap.addEventListener('touchend',e=>{const now=Date.now();if(now-lastTap<300&&e.
 function toggleFullscreen(){if(!document.fullscreenElement){document.documentElement.requestFullscreen?.()}else{document.exitFullscreen?.()}}
 let toastTimer=null;
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('toast--show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('toast--show'),2000)}
+
+// ── Recordings ──────────────────────────────────────────────────────────────
+function parseClipDate(name) {
+  // motion filename: 20260602-143022-01.mp4
+  const m = name.match(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})/);
+  if (!m) return null;
+  return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
+}
+function formatClipDate(d) {
+  if (!d) return 'Unknown date';
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const p=n=>String(n).padStart(2,'0');
+  return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}, ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+function formatSize(bytes) {
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1)+' KB';
+  return (bytes/(1024*1024)).toFixed(1)+' MB';
+}
+function generateThumb(videoUrl, imgEl, spinnerEl) {
+  const v=document.createElement('video');
+  v.crossOrigin='anonymous'; v.muted=true; v.preload='metadata';
+  v.src=videoUrl;
+  let done=false;
+  function onSeeked(){
+    if(done)return; done=true;
+    try{
+      const c=document.createElement('canvas');
+      c.width=320; c.height=180;
+      c.getContext('2d').drawImage(v,0,0,320,180);
+      imgEl.src=c.toDataURL('image/jpeg',0.75);
+      imgEl.style.display='block';
+    }catch(e){}
+    spinnerEl.style.display='none';
+    v.src='';
+  }
+  v.addEventListener('loadeddata',()=>{v.currentTime=1});
+  v.addEventListener('seeked',onSeeked);
+  v.addEventListener('error',()=>{spinnerEl.style.display='none'; done=true; v.src='';});
+  // fallback if seek fires before loadeddata
+  setTimeout(()=>{if(!done&&v.readyState>=2){v.currentTime=1;}},2000);
+}
+function openClips(){
+  document.getElementById('clipsPanel').classList.add('clips-panel--open');
+  loadClips();
+}
+function closeClips(){
+  document.getElementById('clipsPanel').classList.remove('clips-panel--open');
+}
+async function loadClips(){
+  const body=document.getElementById('clipsBody');
+  body.innerHTML='<div class="clips-loading"><div class="spinner" style="border-top-color:#6366f1"></div></div>';
+  let clips=[];
+  try{
+    const r=await fetch(`${API_BASE}/api/recordings`);
+    clips=await r.json();
+  }catch(e){
+    body.innerHTML='<div class="clips-empty">⚠️ Could not load recordings</div>';
+    return;
+  }
+  if(!clips.length){
+    body.innerHTML='<div class="clips-empty">No recordings yet</div>';
+    return;
+  }
+  const grid=document.createElement('div');
+  grid.className='clips-grid';
+  clips.forEach(clip=>{
+    const url=`${API_BASE}/api/recordings/files/${encodeURIComponent(clip.name)}`;
+    const date=parseClipDate(clip.name);
+    const card=document.createElement('div');
+    card.className='clip-card';
+    card.innerHTML=`
+      <div class="clip-thumb">
+        <img style="display:none" alt="">
+        <div class="clip-thumb__spinner"><div class="spinner"></div></div>
+        <div class="clip-thumb__play"><span>▶</span></div>
+      </div>
+      <div class="clip-info">
+        <div class="clip-info__date">${formatClipDate(date)}</div>
+        <div class="clip-info__meta">${formatSize(clip.size)}</div>
+      </div>`;
+    card.addEventListener('click',()=>openPlayer(url, formatClipDate(date)));
+    grid.appendChild(card);
+    const imgEl=card.querySelector('img');
+    const spinEl=card.querySelector('.clip-thumb__spinner');
+    generateThumb(url, imgEl, spinEl);
+  });
+  body.innerHTML='';
+  body.appendChild(grid);
+}
+function openPlayer(url, title){
+  const panel=document.getElementById('playerPanel');
+  const video=document.getElementById('playerVideo');
+  document.getElementById('playerTitle').textContent=title;
+  video.src=url;
+  panel.classList.add('player-panel--open');
+  video.play().catch(()=>{});
+}
+function closePlayer(){
+  const video=document.getElementById('playerVideo');
+  video.pause(); video.src='';
+  document.getElementById('playerPanel').classList.remove('player-panel--open');
+}
+
 connect();
 </script>
 </body>
