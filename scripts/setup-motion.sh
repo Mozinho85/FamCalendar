@@ -112,11 +112,13 @@ cat > /etc/systemd/system/famcalendar-motion.service << EOF
 [Unit]
 Description=FamCalendar Motion CCTV
 After=network.target
+RequiresMountsFor=/media/famcalendar-data
 
 [Service]
 Type=simple
 User=$FAMCAL_USER
 Group=video
+ExecStartPre=/bin/mkdir -p /media/famcalendar-data/recordings
 ExecStart=/usr/bin/motion -c /etc/motion/motion.conf
 Restart=always
 RestartSec=10
