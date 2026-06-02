@@ -1329,7 +1329,6 @@ export default function App() {
   const [personSummary, setPersonSummary] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [activeTab, setActiveTab] = useState('calendar');
   const [loading, setLoading]     = useState(true);
   const [fontSize, setFontSize]   = useState(() => {
     return parseInt(localStorage.getItem("famcal-fontsize") || "16", 10);
@@ -1472,12 +1471,6 @@ export default function App() {
             <button className="today-btn" onClick={handleToday}>Today</button>
           )}
         </div>
-        <div className="topbar__tabs">
-          <button className={`tab-btn ${activeTab === 'calendar' ? 'tab-btn--active' : ''}`}
-            onClick={() => { setActiveTab('calendar'); tap(); }}>📅 Calendar</button>
-          <button className={`tab-btn ${activeTab === 'camera' ? 'tab-btn--active' : ''}`}
-            onClick={() => { setActiveTab('camera'); tap(); }}>📷 Camera</button>
-        </div>
         <button className="settings-btn" onClick={() => setShowSettings(true)}>⚙ Settings</button>
         <ReloadButton />
         <div className="font-controls">
@@ -1486,16 +1479,7 @@ export default function App() {
         </div>
       </header>
 
-      {activeTab === 'camera' && (
-        <iframe
-          className="camera-frame"
-          src="http://192.168.1.51:8091"
-          title="Camera"
-          allowFullScreen
-        />
-      )}
-
-      <div className="main-area" style={activeTab !== 'calendar' ? { display: 'none' } : undefined}>
+      <div className="main-area">
         {/* ── Calendar ── */}
         <div className="cal">
           <div className="cal__head">
