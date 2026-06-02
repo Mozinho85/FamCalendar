@@ -356,6 +356,7 @@ export default function MobileApp() {
   const [addSheet, setAddSheet]         = useState(false);
   const [evSheet, setEvSheet]           = useState(null);
   const [avatarSheet, setAvatarSheet]   = useState(false);
+  const [activeTab, setActiveTab]       = useState('calendar');
 
   const windowStart = addDays(today, -7);
   const windowEnd   = addDays(today, 30);
@@ -392,27 +393,40 @@ export default function MobileApp() {
         <button className="m-topbar__settings" onClick={() => setAvatarSheet(true)}>⚙</button>
       </header>
 
-      {/* Day strip */}
-      <DayStrip
-        selectedDate={selectedDate}
-        onSelect={setSelectedDate}
-        events={events}
-        members={members}
-      />
-
-      {/* Agenda */}
-      <div className="m-content">
-        <AgendaDay
-          date={selectedDate}
-          events={events}
-          members={members}
-          onEventTap={(ev, member) => setEvSheet({ ev, member })}
-          onAddTap={() => setAddSheet(true)}
-        />
+      <div className="m-tab-bar">
+        <button className={`m-tab-btn ${activeTab === 'calendar' ? 'm-tab-btn--active' : ''}`}
+          onClick={() => setActiveTab('calendar')}>📅 Calendar</button>
+        <button className={`m-tab-btn ${activeTab === 'camera' ? 'm-tab-btn--active' : ''}`}
+          onClick={() => setActiveTab('camera')}>📷 Camera</button>
       </div>
 
-      {/* FAB */}
-      <button className="m-fab" onClick={() => setAddSheet(true)}>+</button>
+      {activeTab === 'camera' ? (
+        <iframe className="m-camera-frame" src="http://192.168.1.5:8091" title="Camera" allowFullScreen />
+      ) : (
+        <>
+          {/* Day strip */}
+          <DayStrip
+            selectedDate={selectedDate}
+            onSelect={setSelectedDate}
+            events={events}
+            members={members}
+          />
+
+          {/* Agenda */}
+          <div className="m-content">
+            <AgendaDay
+              date={selectedDate}
+              events={events}
+              members={members}
+              onEventTap={(ev, member) => setEvSheet({ ev, member })}
+              onAddTap={() => setAddSheet(true)}
+            />
+          </div>
+
+          {/* FAB */}
+          <button className="m-fab" onClick={() => setAddSheet(true)}>+</button>
+        </>
+      )}
 
       {/* Sheets */}
       {addSheet && (

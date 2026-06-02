@@ -400,6 +400,35 @@ html, body, #root {
   flex-shrink: 0;
 }
 
+/* ── Tab bar ─────────────────────────────────────────────────────────── */
+.m-tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+.m-tab-btn {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  background: none;
+  color: var(--text-2);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.m-tab-btn--active {
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+}
+
+/* ── Camera frame ────────────────────────────────────────────────────── */
+.m-camera-frame {
+  flex: 1;
+  width: 100%;
+  border: none;
+  display: block;
+}
+
 /* ── Avatar rows in sheet ────────────────────────────────────────────── */
 .m-avatar-row {
   display: flex;
