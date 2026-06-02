@@ -64,6 +64,7 @@ stream_quality 80
 stream_maxrate 15
 stream_localhost off   # allow LAN access
 stream_auth_method 0
+stream_cors_header on  # required for cross-port browser requests
 
 # ── Webcontrol (admin API — localhost only) ──────────────────────────────────
 webcontrol_port 8092
