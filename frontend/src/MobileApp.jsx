@@ -401,7 +401,7 @@ export default function MobileApp() {
       </div>
 
       {activeTab === 'camera' ? (
-        <iframe className="m-camera-frame" src="http://192.168.1.5:8091" title="Camera" allowFullScreen />
+        <iframe className="m-camera-frame" src="http://192.168.1.51:8091" title="Camera" allowFullScreen />
       ) : (
         <>
           {/* Day strip */}

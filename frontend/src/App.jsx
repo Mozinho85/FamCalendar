@@ -1489,7 +1489,7 @@ export default function App() {
       {activeTab === 'camera' && (
         <iframe
           className="camera-frame"
-          src="http://192.168.1.5:8091"
+          src="http://192.168.1.51:8091"
           title="Camera"
           allowFullScreen
         />
