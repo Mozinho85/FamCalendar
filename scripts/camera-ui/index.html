@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Camera">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<title>Camera</title>
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon.png">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:-apple-system,system-ui,sans-serif;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+.wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000;touch-action:none}
+#viewport{position:relative;max-width:100%;max-height:100%;overflow:hidden}
+#stream{display:block;max-width:100%;max-height:100vh;object-fit:contain;transform-origin:center center;transition:transform 0.05s linear}
+canvas{display:none}
+.status{position:fixed;top:calc(env(safe-area-inset-top,12px) + 8px);left:14px;display:flex;align-items:center;gap:7px;padding:7px 13px;background:rgba(0,0,0,.55);border-radius:20px;color:#fff;font-size:13px;font-weight:500;backdrop-filter:blur(10px);z-index:10}
+.dot{width:8px;height:8px;border-radius:50%;background:#ef4444}
+.dot--live{background:#22c55e;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.timestamp{position:fixed;top:calc(env(safe-area-inset-top,12px) + 8px);right:14px;padding:7px 13px;background:rgba(0,0,0,.55);border-radius:20px;color:#fff;font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;backdrop-filter:blur(10px);z-index:10}
+.rec-badge{position:fixed;top:calc(env(safe-area-inset-top,12px) + 52px);left:50%;transform:translateX(-50%);display:none;align-items:center;gap:8px;padding:7px 16px;background:rgba(239,68,68,.9);border-radius:20px;color:#fff;font-size:14px;font-weight:600;z-index:10}
+.rec-badge--on{display:flex}
+.rec-badge .rdot{width:10px;height:10px;border-radius:50%;background:#fff;animation:pulse 1s infinite}
+.controls{position:fixed;bottom:calc(env(safe-area-inset-bottom,16px) + 16px);left:0;right:0;display:flex;align-items:center;justify-content:center;gap:28px;z-index:10}
+.ctrl{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;color:#fff;cursor:pointer}
+.ctrl-btn{width:60px;height:60px;border-radius:50%;background:rgba(40,44,56,.85);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;font-size:26px;border:1.5px solid rgba(255,255,255,.15)}
+.ctrl-btn:active{background:rgba(60,66,82,.95)}
+.ctrl-btn--rec{background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.5)}
+.ctrl-btn--rec.recording{background:rgba(239,68,68,.9)}
+.ctrl-label{font-size:11px;color:#aaa;font-weight:500}
+.ctrl-btn--snap{background:rgba(34,197,94,.2);border-color:rgba(34,197,94,.5)}
+.zoom-reset{position:fixed;bottom:calc(env(safe-area-inset-bottom,16px) + 96px);left:50%;transform:translateX(-50%);display:none;padding:8px 18px;background:rgba(0,0,0,.6);border-radius:20px;color:#fff;font-size:13px;border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(10px);z-index:10}
+.zoom-reset--show{display:block}
+.flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:20}
+.flash--fire{animation:flashAnim .3s ease-out}
+@keyframes flashAnim{0%{opacity:0}30%{opacity:.8}100%{opacity:0}}
+.toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,16px) + 96px);left:50%;transform:translateX(-50%);padding:10px 20px;background:rgba(0,0,0,.85);border-radius:20px;color:#fff;font-size:14px;z-index:30;opacity:0;transition:opacity .3s}
+.toast--show{opacity:1}
+.overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#000;color:#888;z-index:15;font-size:15px}
+.overlay--hidden{display:none}
+.spinner{width:40px;height:40px;border:3px solid #333;border-top-color:#22c55e;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.retry-btn{padding:12px 28px;border-radius:24px;background:#1f2937;color:#fff;border:none;font-size:15px;font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap"><div id="viewport"><img id="stream" alt="Camera" crossorigin="anonymous"></div></div>
+<canvas id="canvas"></canvas>
+<div class="status"><span class="dot" id="dot"></span><span id="statusText">Connecting...</span></div>
+<div class="timestamp" id="timestamp">--:--:--</div>
+<div class="rec-badge" id="recBadge"><span class="rdot"></span><span id="recTime">0:00</span></div>
+<div class="zoom-reset" id="zoomReset" onclick="resetZoom()">Reset zoom</div>
+<div class="controls">
+<button class="ctrl" onclick="takeSnapshot()"><div class="ctrl-btn ctrl-btn--snap">📷</div><span class="ctrl-label">Photo</span></button>
+<button class="ctrl" onclick="toggleRecording()"><div class="ctrl-btn ctrl-btn--rec" id="recBtn">⏺</div><span class="ctrl-label" id="recLabel">Record</span></button>
+<button class="ctrl" onclick="toggleFullscreen()"><div class="ctrl-btn">⛶</div><span class="ctrl-label">Full</span></button>
+</div>
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+<div class="overlay" id="overlay"><div class="spinner" id="spinner"></div><div id="overlayText">Connecting to camera...</div><button class="retry-btn" id="retryBtn" style="display:none" onclick="connect()">Retry</button></div>
+<script>
+const STREAM_URL=`http://${location.hostname}:8090/stream`;
+const img=document.getElementById('stream'),canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d'),dot=document.getElementById('dot'),statusText=document.getElementById('statusText'),overlay=document.getElementById('overlay'),overlayText=document.getElementById('overlayText'),spinner=document.getElementById('spinner'),retryBtn=document.getElementById('retryBtn'),timestampEl=document.getElementById('timestamp');
+let reconnectTimer=null;
+function connect(){clearTimeout(reconnectTimer);overlay.classList.remove('overlay--hidden');spinner.style.display='block';retryBtn.style.display='none';overlayText.textContent='Connecting to camera...';dot.classList.remove('dot--live');statusText.textContent='Connecting...';img.src=STREAM_URL+'&t='+Date.now()}
+img.onload=()=>{overlay.classList.add('overlay--hidden');dot.classList.add('dot--live');statusText.textContent='Live'};
+img.onerror=()=>{dot.classList.remove('dot--live');statusText.textContent='Offline';spinner.style.display='none';overlay.classList.remove('overlay--hidden');overlayText.textContent='Camera unavailable';retryBtn.style.display='block';reconnectTimer=setTimeout(connect,5000)};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)connect()});
+function updateTime(){const d=new Date(),p=n=>String(n).padStart(2,'0');timestampEl.textContent=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`}
+setInterval(updateTime,1000);updateTime();
+function takeSnapshot(){if(!img.naturalWidth){showToast('No video yet');return}canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;ctx.drawImage(img,0,0);const d=new Date();ctx.font=`${Math.round(canvas.width/40)}px sans-serif`;ctx.fillStyle='rgba(0,0,0,0.5)';const stamp=d.toLocaleString(),tw=ctx.measureText(stamp).width;ctx.fillRect(10,canvas.height-44,tw+20,34);ctx.fillStyle='#fff';ctx.fillText(stamp,20,canvas.height-20);document.getElementById('flash').classList.add('flash--fire');setTimeout(()=>document.getElementById('flash').classList.remove('flash--fire'),300);canvas.toBlob(blob=>{const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`camera-${Date.now()}.jpg`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showToast('Photo saved')},'image/jpeg',0.95)}
+let recorder=null,chunks=[],recording=false,recStart=0,recTimer=null,drawTimer=null;
+function toggleRecording(){recording?stopRecording():startRecording()}
+function startRecording(){if(!img.naturalWidth){showToast('No video yet');return}canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;drawTimer=setInterval(()=>{if(img.naturalWidth)ctx.drawImage(img,0,0,canvas.width,canvas.height)},1000/25);const stream=canvas.captureStream(25);chunks=[];let mime=MediaRecorder.isTypeSupported('video/mp4')?'video/mp4':'video/webm';recorder=new MediaRecorder(stream,{mimeType:mime});recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onstop=()=>{clearInterval(drawTimer);const blob=new Blob(chunks,{type:chunks[0]?.type||mime}),url=URL.createObjectURL(blob),ext=mime.includes('mp4')?'mp4':'webm',a=document.createElement('a');a.href=url;a.download=`clip-${Date.now()}.${ext}`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showToast('Clip saved')};recorder.start();recording=true;recStart=Date.now();document.getElementById('recBtn').classList.add('recording');document.getElementById('recLabel').textContent='Stop';document.getElementById('recBadge').classList.add('rec-badge--on');recTimer=setInterval(updateRecTime,500)}
+function stopRecording(){if(recorder&&recorder.state!=='inactive')recorder.stop();recording=false;clearInterval(recTimer);document.getElementById('recBtn').classList.remove('recording');document.getElementById('recLabel').textContent='Record';document.getElementById('recBadge').classList.remove('rec-badge--on')}
+function updateRecTime(){const s=Math.floor((Date.now()-recStart)/1000);document.getElementById('recTime').textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`}
+let scale=1,tx=0,ty=0,startDist=0,startScale=1,panStart=null;
+function applyTransform(){img.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;document.getElementById('zoomReset').classList.toggle('zoom-reset--show',scale>1.02)}
+function resetZoom(){scale=1;tx=0;ty=0;applyTransform()}
+function dist(t){return Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY)}
+const wrap=document.getElementById('wrap');
+wrap.addEventListener('touchstart',e=>{if(e.touches.length===2){startDist=dist(e.touches);startScale=scale}else if(e.touches.length===1&&scale>1){panStart={x:e.touches[0].clientX-tx,y:e.touches[0].clientY-ty}}},{passive:false});
+wrap.addEventListener('touchmove',e=>{if(e.touches.length===2){e.preventDefault();scale=Math.min(Math.max(startScale*(dist(e.touches)/startDist),1),5);applyTransform()}else if(e.touches.length===1&&scale>1&&panStart){e.preventDefault();tx=e.touches[0].clientX-panStart.x;ty=e.touches[0].clientY-panStart.y;applyTransform()}},{passive:false});
+let lastTap=0;
+wrap.addEventListener('touchend',e=>{const now=Date.now();if(now-lastTap<300&&e.changedTouches.length===1){scale=scale>1?1:2;tx=0;ty=0;applyTransform()}lastTap=now});
+function toggleFullscreen(){if(!document.fullscreenElement){document.documentElement.requestFullscreen?.()}else{document.exitFullscreen?.()}}
+let toastTimer=null;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('toast--show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('toast--show'),2000)}
+connect();
+</script>
+</body>
+</html>

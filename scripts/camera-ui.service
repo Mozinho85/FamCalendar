@@ -1,0 +1,16 @@
+[Unit]
+Description=FamCalendar Camera UI Web Server
+After=network.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__UI_DIR__
+ExecStart=/usr/bin/python3 -m http.server 8091
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
