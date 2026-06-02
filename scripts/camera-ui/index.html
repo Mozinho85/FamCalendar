@@ -120,7 +120,7 @@ canvas{display:none}
 
 <script>
 const API_BASE=`http://${location.hostname}:3001`;
-const STREAM_URL=`http://${location.hostname}:8090/stream`;
+const STREAM_URL=`http://${location.hostname}:8090/1/stream`;
 const img=document.getElementById('stream'),canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d'),dot=document.getElementById('dot'),statusText=document.getElementById('statusText'),overlay=document.getElementById('overlay'),overlayText=document.getElementById('overlayText'),spinner=document.getElementById('spinner'),retryBtn=document.getElementById('retryBtn'),timestampEl=document.getElementById('timestamp');
 let reconnectTimer=null;
 function connect(){clearTimeout(reconnectTimer);overlay.classList.remove('overlay--hidden');spinner.style.display='block';retryBtn.style.display='none';overlayText.textContent='Connecting to camera...';dot.classList.remove('dot--live');statusText.textContent='Connecting...';img.src=STREAM_URL+'&t='+Date.now()}

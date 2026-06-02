@@ -52,13 +52,13 @@ cat > /etc/motion/motion.conf << 'EOF'
 daemon off   # systemd manages the process
 
 # ── Camera ──────────────────────────────────────────────────────────────────
-videodevice /dev/v4l/by-id/usb-Remo_Tech_Co.__Ltd._OBSBOT_Meet_SE-video-index0
-v4l2_palette 8        # MJPEG — uses the camera's native compression (low CPU)
+video_device /dev/v4l/by-id/usb-Remo_Tech_Co.__Ltd._OBSBOT_Meet_SE-video-index0
+video_params "pixel_format=mjpeg"
 width 1920
 height 1080
 framerate 15          # 15fps is plenty for CCTV; keeps CPU load low
 
-# ── MJPEG stream (replaces mjpeg-streamer on same port) ─────────────────────
+# ── MJPEG stream ─────────────────────────────────────────────────────────────
 stream_port 8090
 stream_quality 80
 stream_maxrate 15
@@ -78,7 +78,7 @@ event_gap 15           # seconds of no motion before ending an event
 
 # ── Recording ────────────────────────────────────────────────────────────────
 target_dir /media/famcalendar-data/recordings
-output_pictures off    # no per-frame JPEGs, just video clips
+picture_output off
 movie_output on
 movie_max_time 120     # cap clips at 2 minutes
 movie_quality 65       # H.264 quality (lower = smaller files)
