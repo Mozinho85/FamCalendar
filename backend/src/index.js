@@ -238,9 +238,6 @@ setTimeout(() => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`FamCalendar backend running on port ${PORT}`);
-  localWakeService.start().catch(err => {
-    console.error('Failed to start local wake listener:', err.message);
-  });
   console.log(`Google Calendar sync every ${SYNC_INTERVAL} minutes`);
   console.log(`Phone UI available at http://<pi-ip>:${PORT}`);
 });
