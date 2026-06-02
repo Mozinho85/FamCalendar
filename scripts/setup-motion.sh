@@ -87,9 +87,9 @@ movie_filename %Y%m%d-%H%M%S-%v
 pre_capture 3          # seconds before motion to include
 post_capture 5         # seconds after motion ends to include
 
-# ── Logging ──────────────────────────────────────────────────────────────────
+# ── Logging — stdout only (captured by systemd journal in RAM, not SD card) ──
 log_level 5
-log_file /var/log/motion/motion.log
+; log_file not set — do NOT write to /var/log to protect the SD card
 EOF
 
 # ── 5. Install updated camera UI HTML ───────────────────────────────────────
