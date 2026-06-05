@@ -212,9 +212,17 @@ sqlite3 /media/famcalendar-data/FamCalendar/data/events.db "SELECT title, start_
 # Force a frontend rebuild
 cd ~/FamCalendar/frontend && npm run build
 
+# Force sync to GitHub main + clean reinstall + rebuild
+cd ~/FamCalendar && FORCE_PULL=1 CLEAN_INSTALL=1 bash scripts/update.sh
+
 # Restart backend
 sudo systemctl restart famcalendar-backend
 ```
+
+Notes:
+- `FORCE_PULL=1` hard-resets the local repo to `origin/main` and removes untracked files.
+- `CLEAN_INSTALL=1` removes `node_modules` and frontend `dist` before reinstall/build.
+- This is intended for recovery when the Pi install gets into a bad state.
 
 ---
 

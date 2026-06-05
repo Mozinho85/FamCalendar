@@ -2,6 +2,8 @@
 # FamCalendar auto-update — pulls from GitHub and redeploys if changes found
 # Runs every 5 minutes via cron and at boot via systemd
 # Set FORCE=1 to update regardless of whether there are new commits
+# Set FORCE_PULL=1 to hard-reset local repo to origin/main before reinstalling
+# Set CLEAN_INSTALL=1 to remove node_modules/build artifacts before reinstall
 
 # Ensure npm/node are on PATH regardless of how this script was invoked
 export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
@@ -37,13 +39,31 @@ fi
 
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse origin/main)
+EFFECTIVE_FORCE="${FORCE:-0}"
 
-if [ "$LOCAL" = "$REMOTE" ] && [ "${FORCE:-0}" != "1" ]; then
+if [ "${FORCE_PULL:-0}" = "1" ] || [ "${CLEAN_INSTALL:-0}" = "1" ]; then
+  EFFECTIVE_FORCE="1"
+fi
+
+if [ "${FORCE_PULL:-0}" = "1" ]; then
+  echo "FORCE_PULL=1 set — resetting local branch to origin/main..."
+  if ! git reset --hard origin/main 2>&1; then
+    echo "ERROR: git reset --hard failed"
+    exit 1
+  fi
+  # Remove untracked files so the deploy folder is fully in sync with GitHub.
+  if ! git clean -fd 2>&1; then
+    echo "ERROR: git clean failed"
+    exit 1
+  fi
+fi
+
+if [ "$LOCAL" = "$REMOTE" ] && [ "$EFFECTIVE_FORCE" != "1" ]; then
   echo "Already up to date."
   exit 0
 fi
 
-if [ "$LOCAL" = "$REMOTE" ] && [ "${FORCE:-0}" = "1" ]; then
+if [ "$LOCAL" = "$REMOTE" ] && [ "$EFFECTIVE_FORCE" = "1" ]; then
   echo "Already up to date, but running forced reinstall..."
 else
   echo "Update found ($LOCAL -> $REMOTE), pulling..."
@@ -54,17 +74,32 @@ else
   fi
 fi
 
+if [ "${CLEAN_INSTALL:-0}" = "1" ]; then
+  echo "CLEAN_INSTALL=1 set — removing existing install/build artifacts..."
+  rm -rf "$FAMCAL_DIR/backend/node_modules" \
+         "$FAMCAL_DIR/frontend/node_modules" \
+         "$FAMCAL_DIR/frontend/dist"
+fi
+
 # Reinstall backend deps if package.json changed (or forced)
-if git diff "$LOCAL" HEAD --name-only 2>/dev/null | grep -q "backend/package.json" || [ "${FORCE:-0}" = "1" ]; then
+if git diff "$LOCAL" HEAD --name-only 2>/dev/null | grep -q "backend/package.json" || [ "$EFFECTIVE_FORCE" = "1" ]; then
   echo "Installing backend dependencies..."
-  cd "$FAMCAL_DIR/backend" && npm install --production 2>&1
+  if [ -f "$FAMCAL_DIR/backend/package-lock.json" ]; then
+    cd "$FAMCAL_DIR/backend" && npm ci --omit=dev 2>&1
+  else
+    cd "$FAMCAL_DIR/backend" && npm install --production 2>&1
+  fi
   cd "$FAMCAL_DIR"
 fi
 
 # Rebuild frontend if any frontend files changed (or forced)
-if git diff "$LOCAL" HEAD --name-only 2>/dev/null | grep -q "^frontend/" || [ "${FORCE:-0}" = "1" ]; then
+if git diff "$LOCAL" HEAD --name-only 2>/dev/null | grep -q "^frontend/" || [ "$EFFECTIVE_FORCE" = "1" ]; then
   echo "Installing frontend dependencies..."
-  cd "$FAMCAL_DIR/frontend" && npm install 2>&1
+  if [ -f "$FAMCAL_DIR/frontend/package-lock.json" ]; then
+    cd "$FAMCAL_DIR/frontend" && npm ci 2>&1
+  else
+    cd "$FAMCAL_DIR/frontend" && npm install 2>&1
+  fi
   echo "Building frontend..."
   # Limit Node memory to avoid OOM on Pi (512 MB is safe on a Pi 4 with display running)
   NODE_OPTIONS="--max-old-space-size=512" npm run build 2>&1
@@ -83,4 +118,4 @@ sudo systemctl restart famcalendar-backend 2>&1
 
 echo ""
 echo "Update complete!"
-echo "$(date): Update complete (${FORCE:-0} forced)" >> "$LOG"
+echo "$(date): Update complete (${EFFECTIVE_FORCE} forced, pull=${FORCE_PULL:-0}, clean=${CLEAN_INSTALL:-0})" >> "$LOG"
