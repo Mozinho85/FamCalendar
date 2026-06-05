@@ -1,7 +1,0 @@
-node_modules/
-backend/public/
-backend/.env
-data/
-logs/
-*.log
-.DS_Store
